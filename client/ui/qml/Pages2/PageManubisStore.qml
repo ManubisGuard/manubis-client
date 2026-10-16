@@ -4,6 +4,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
 import "../Controls2"
+import "../Manubis"
 
 PageType {
     id: root
@@ -123,6 +124,8 @@ PageType {
         var xhr = new XMLHttpRequest()
         xhr.open("POST", base + "/api/v1/store/orders")
         xhr.setRequestHeader("Content-Type", "application/json")
+        if (ManubisPreferences.isAuthenticated)
+            xhr.setRequestHeader("Authorization", "Bearer " + ManubisPreferences.sessionToken)
         xhr.timeout = 15000
         xhr.onreadystatechange = function() {
             if (xhr.readyState !== XMLHttpRequest.DONE) return
@@ -318,7 +321,7 @@ PageType {
                             Layout.fillWidth: true; Layout.preferredHeight: 44
                             text: root.maintenanceMode ? "فروشگاه موقتاً غیرفعال است" : (root.cardTransferEnabled ? "خرید با کارت‌به‌کارت" : "پرداخت هنوز تنظیم نشده")
                             enabled: !root.maintenanceMode && root.cardTransferEnabled && !root.loading
-                            onClicked: { root.selectedPlanId = modelData.id; customerReferenceInput.text = ""; checkoutStatus = ""; orderReferenceDialog.open() }
+                            onClicked: { root.selectedPlanId = modelData.id; customerReferenceInput.text = ManubisPreferences.isAuthenticated ? ManubisPreferences.accountUsername : ""; checkoutStatus = ""; orderReferenceDialog.open() }
                             background: Rectangle { radius: 12; color: buyPlanButton.enabled ? "#42D9F5" : "#263751" }
                             contentItem: Text { text: buyPlanButton.text; color: "#071321"; font.bold: true; font.pixelSize: 13; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
                         }
@@ -363,7 +366,7 @@ PageType {
         width: Math.min(360, root.width - 28)
         contentItem: ColumnLayout {
             spacing: 10
-            Label { text: "شماره تماس یا شناسه تلگرام"; wrapMode: Text.Wrap; Layout.fillWidth: true }
+            Label { text: ManubisPreferences.isAuthenticated ? "شناسه تماس برای سفارش (حساب به سفارش متصل می‌شود)" : "شماره تماس یا شناسه تلگرام"; wrapMode: Text.Wrap; Layout.fillWidth: true }
             TextField { id: customerReferenceInput; placeholderText: "مثلاً @username یا 09…"; Layout.fillWidth: true; selectByMouse: true }
             Button { text: root.orderSubmitting ? "در حال ساخت سفارش…" : "ادامه به پرداخت"; enabled: !root.orderSubmitting; Layout.fillWidth: true; onClicked: root.createOrder() }
             Label { text: root.checkoutStatus; color: "#FFB7C4"; wrapMode: Text.Wrap; Layout.fillWidth: true; visible: root.checkoutStatus.length > 0 }

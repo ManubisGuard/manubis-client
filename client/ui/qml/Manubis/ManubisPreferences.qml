@@ -14,4 +14,10 @@ QtObject {
 
     property alias languageChosen: settingsStore.languageChosen
     property alias languageCode: settingsStore.languageCode
+
+    // In-memory customer session only. Never persist bearer tokens in QSettings.
+    property string sessionToken: ""
+    property string accountId: ""
+    property string accountUsername: ""
+    readonly property bool isAuthenticated: sessionToken.length > 0 && accountId.length > 0
 }

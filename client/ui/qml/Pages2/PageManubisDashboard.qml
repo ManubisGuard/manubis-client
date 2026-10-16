@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import PageEnum 1.0
 import "../Controls2"
+import "../Manubis"
 
 PageType {
     id: root
@@ -175,8 +176,9 @@ PageType {
                         anchors.fill: parent; anchors.margins: 14; spacing: 8
                         Text { text: "◈"; color: cyan; font.pixelSize: 21 }
                         Text { text: "اشتراک من"; color: ink; font.pixelSize: 13; font.bold: true }
-                        Text { text: "اطلاعات اشتراک هنوز به API متصل نیست"; color: muted; font.pixelSize: 10; wrapMode: Text.Wrap; Layout.fillWidth: true }
+                        Text { text: ManubisPreferences.isAuthenticated ? "حساب متصل: @" + ManubisPreferences.accountUsername : "برای دیدن سفارش‌ها وارد حساب شو"; color: muted; font.pixelSize: 10; wrapMode: Text.Wrap; Layout.fillWidth: true }
                     }
+                    MouseArea { anchors.fill: parent; onClicked: PageController.goToPage(PageEnum.PageManubisAccount) }
                 }
                 Rectangle {
                     Layout.fillWidth: true; Layout.preferredHeight: 105
