@@ -1,5 +1,7 @@
 #include <QDebug>
 #include <QTimer>
+#include <QQuickWindow>
+#include <QSGRendererInterface>
 #include <libssh/libssh.h>
 #include <openssl/ssl.h>
 
@@ -49,6 +51,13 @@ int main(int argc, char *argv[])
     // QTBUG-95974 QTBUG-95764 QTBUG-102168
     qputenv("QT_ANDROID_DISABLE_ACCESSIBILITY", "1");
     qputenv("ANDROID_OPENSSL_SUFFIX", "_3");
+
+    // Some Android GPU/driver combinations can abort inside the Qt Android
+    // platform plugin while making the OpenGL context current during startup.
+    // Use Qt Quick's software renderer for this test build to avoid that path.
+    // This must be selected before the first QQuickWindow is created.
+    QQuickWindow::setGraphicsApi(QSGRendererInterface::Software);
+    qInfo() << "ManubisGuard: Qt Quick software renderer enabled on Android";
 #endif
 
     AmneziaApplication app(argc, argv);

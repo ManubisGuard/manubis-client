@@ -18,7 +18,7 @@ PageType {
     isTabBarHidden: true
 
     property string configExtension: ".conf"
-    property string configCaption: qsTr("Save AmneziaVPN config")
+    property string configCaption: qsTr("Save Manubis Guard config")
 
     Component.onCompleted: {
         ApiConfigsCountryListModel.applyDefaultState(false)

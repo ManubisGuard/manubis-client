@@ -107,6 +107,16 @@
         <file>Pages2/PageDeinstalling.qml</file>
         <file>Pages2/PageDevMenu.qml</file>
         <file>Pages2/PageHome.qml</file>
+        <file>Pages2/PageManubisAccount.qml</file>
+        <file>Pages2/PageManubisStore.qml</file>
+        <file>Pages2/PageManubisDashboard.qml</file>
+        <file>Pages2/PageManubisHome.qml</file>
+        <file>Pages2/PageManubisLanguage.qml</file>
+        <file>Pages2/PageManubisSettings.qml</file>
+        <file>Pages2/PageManubisImportSubscription.qml</file>
+        <file>Pages2/PageManubisImportReview.qml</file>
+        <file>Manubis/ManubisTheme.qml</file>
+        <file>Manubis/qmldir</file>
         <file>Pages2/PageProtocolAwgSettings.qml</file>
         <file>Pages2/PageProtocolOpenVpnSettings.qml</file>
         <file>Pages2/PageProtocolRaw.qml</file>

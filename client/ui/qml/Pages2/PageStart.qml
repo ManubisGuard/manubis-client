@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtCore
 
 import PageEnum 1.0
 import Style 1.0
@@ -19,6 +20,13 @@ PageType {
     property bool isTabBarShown: true
     readonly property real tabBarHeight: tabBar.visible ? tabBar.height : 0
 
+    Settings {
+        id: productPreferences
+        category: "ManubisGuard"
+        property bool languageChosen: false
+        property string languageCode: ""
+    }
+
     Keys.onPressed: function(event) {
         if (event.key === Qt.Key_Back || event.key === Qt.Key_Escape) {
             PageController.keyPressEvent(event.key)
@@ -32,37 +40,25 @@ PageType {
         target: PageController
 
         function onGoToPageHome() {
-            if (PageController.isStartPageVisible()) {
-                root.isTabBarShown = false
-                tabBarStackView.goToTabBarPage(PageEnum.PageSetupWizardStart)
-            } else {
-                root.isTabBarShown = true
-                tabBar.setCurrentIndex(0)
-                tabBarStackView.goToTabBarPage(PageEnum.PageHome)
-            }
+            root.isTabBarShown = true
+            tabBar.setCurrentIndex(0)
+            tabBarStackView.goToTabBarPage(PageEnum.PageManubisHome)
         }
 
         function onGoToPageSettings() {
-            tabBar.setCurrentIndex(2)
-            tabBarStackView.goToTabBarPage(PageEnum.PageSettings)
+            var pagePath = PageController.getPagePath(PageEnum.PageManubisSettings)
+            tabBarStackView.push(pagePath, { "objectName" : pagePath }, StackView.PushTransition)
+            root.isTabBarShown = true
         }
 
         function onGoToPageViewConfig() {
-            var pagePath = PageController.getPagePath(PageEnum.PageSetupWizardViewConfig)
+            var pagePath = PageController.getPagePath(PageEnum.PageManubisImportReview)
             tabBarStackView.push(pagePath, { "objectName" : pagePath }, StackView.PushTransition)
         }
 
         function onGoToShareConnectionPage(headerText, configContentHeaderText, configCaption, configExtension, configFileName) {
-            var pagePath = PageController.getPagePath(PageEnum.PageShareConnection)
-            tabBarStackView.push(pagePath,
-                                 { "objectName" : pagePath,
-                                     "headerText" : headerText,
-                                     "configContentHeaderText" : configContentHeaderText,
-                                     "configCaption" : configCaption,
-                                     "configExtension" : configExtension,
-                                     "configFileName" : configFileName
-                                 },
-                                 StackView.PushTransition)
+            // Do not expose the legacy Amnezia share screen in the Manubis UI.
+            PageController.showNotificationMessage(qsTr("Sharing connection files is not available in this version yet."))
         }
 
         function onDisableControls(disabled) {
@@ -82,18 +78,60 @@ PageType {
         }
 
         function onGoToPage(page, slide) {
-            var pagePath = PageController.getPagePath(page)
+            // Route legacy Amnezia entry points into the Manubis experience.
+            if (page === PageEnum.PageHome || page === PageEnum.PageSetupWizardStart) {
+                page = PageEnum.PageManubisHome
+            } else if (page === PageEnum.PageSettings || page === PageEnum.PageSettingsServersList ||
+                       (page >= PageEnum.PageSettingsServerData && page <= PageEnum.PageSettingsKillSwitchExceptions) ||
+                       (page >= PageEnum.PageProtocolOpenVpnSettings && page <= PageEnum.PageProtocolXrayXPaddingBytesSettings)) {
+                page = PageEnum.PageManubisSettings
+            } else if (page === PageEnum.PageSettingsLanguage) {
+                page = PageEnum.PageManubisLanguage
+            } else if (page === PageEnum.PageShare || page === PageEnum.PageShareFullAccess ||
+                       page === PageEnum.PageShareConnection) {
+                page = PageEnum.PageManubisAccount
+            } else if (page === PageEnum.PageAbout || page === PageEnum.PageDevMenu ||
+                       (page >= PageEnum.PageServiceSftpSettings && page <= PageEnum.PageServiceTProxySettings)) {
+                page = PageEnum.PageManubisSettings
+            } else if (page === PageEnum.PageSetupWizardViewConfig) {
+                page = PageEnum.PageManubisImportReview
+            } else if (page === PageEnum.PageSetupWizardConfigSource ||
+                       (page >= PageEnum.PageSetupWizardStart && page <= PageEnum.PageSetupWizardApiFreeInfo) ||
+                       page === PageEnum.PageSetupWizardApiPremiumInfo || page === PageEnum.PageSetupWizardApiTrialEmail) {
+                page = PageEnum.PageManubisImportSubscription
+            }
 
+            if (page === PageEnum.PageManubisHome || page === PageEnum.PageManubisDashboard ||
+                    page === PageEnum.PageManubisStore || page === PageEnum.PageManubisAccount) {
+                if (page === PageEnum.PageManubisHome) tabBar.setCurrentIndex(0)
+                else if (page === PageEnum.PageManubisStore) tabBar.setCurrentIndex(1)
+                else if (page === PageEnum.PageManubisDashboard) tabBar.setCurrentIndex(2)
+                else tabBar.setCurrentIndex(3)
+                tabBarStackView.goToTabBarPage(page)
+                root.isTabBarShown = true
+                return
+            }
+
+            var pagePath = PageController.getPagePath(page)
             if (slide) {
                 tabBarStackView.push(pagePath, { "objectName" : pagePath }, StackView.PushTransition)
             } else {
-                tabBarStackView.push(pagePath, { "objectName" : pagePath }, StackView.Immediate)
+                tabBarStackView.replace(pagePath, { "objectName" : pagePath }, StackView.Immediate)
             }
+            root.isTabBarShown = page !== PageEnum.PageManubisLanguage
         }
 
         function onGoToStartPage() {
             while (tabBarStackView.depth > 1) {
                 tabBarStackView.pop()
+            }
+            if (!productPreferences.languageChosen) {
+                root.isTabBarShown = false
+                var languagePath = PageController.getPagePath(PageEnum.PageManubisLanguage)
+                tabBarStackView.replace(languagePath, { "objectName" : languagePath }, StackView.Immediate)
+            } else {
+                root.isTabBarShown = true
+                tabBarStackView.goToTabBarPage(PageEnum.PageManubisHome)
             }
         }
 
@@ -104,8 +142,9 @@ PageType {
 
             var pageName = tabBarStackView.currentItem.objectName
             if ((pageName === PageController.getPagePath(PageEnum.PageShare)) ||
-                    (pageName === PageController.getPagePath(PageEnum.PageSettings)) ||
-                    (pageName === PageController.getPagePath(PageEnum.PageSetupWizardConfigSource))) {
+                    (pageName === PageController.getPagePath(PageEnum.PageManubisSettings)) ||
+                    (pageName === PageController.getPagePath(PageEnum.PageManubisImportSubscription)) ||
+                    (pageName === PageController.getPagePath(PageEnum.PageManubisImportReview))) {
                 PageController.goToPageHome()
             } else {
                 PageController.closePage()
@@ -120,9 +159,7 @@ PageType {
 
         function onNoInstalledContainers() {
             PageController.setTriggeredByConnectButton(true)
-
-            ServersUiController.setProcessedServerId(ServersUiController.defaultServerId)
-            PageController.goToPage(PageEnum.PageSetupWizardEasy)
+            PageController.goToPage(PageEnum.PageManubisImportSubscription)
         }
     }
 
@@ -165,12 +202,7 @@ PageType {
         }
 
         function onRemoveServerFinished(finishedMessage) {
-            if (!ServersUiController.getServersCount()) {
-                PageController.goToPageHome()
-            } else {
-                PageController.goToStartPage()
-                PageController.goToPage(PageEnum.PageSettingsServersList)
-            }
+            PageController.goToPageHome()
             PageController.showNotificationMessage(finishedMessage)
         }
 
@@ -245,12 +277,7 @@ PageType {
         }
 
         function onApiServerRemoved(message) {
-            if (!ServersUiController.getServersCount()) {
-                PageController.goToPageHome()
-            } else {
-                PageController.goToStartPage()
-                PageController.goToPage(PageEnum.PageSettingsServersList)
-            }
+            PageController.goToPageHome()
             PageController.showNotificationMessage(message)
         }
 
@@ -292,17 +319,15 @@ PageType {
         }
 
         Component.onCompleted: {
-            var pagePath
-            if (PageController.isStartPageVisible()) {
-                root.isTabBarShown = false
-                pagePath = PageController.getPagePath(PageEnum.PageSetupWizardStart)
-            } else {
+            if (productPreferences.languageChosen) {
                 root.isTabBarShown = true
-                pagePath = PageController.getPagePath(PageEnum.PageHome)
-                ServersUiController.setProcessedServerId(ServersUiController.defaultServerId)
+                var homePath = PageController.getPagePath(PageEnum.PageManubisHome)
+                tabBarStackView.push(homePath, { "objectName" : homePath })
+            } else {
+                root.isTabBarShown = false
+                var languagePath = PageController.getPagePath(PageEnum.PageManubisLanguage)
+                tabBarStackView.push(languagePath, { "objectName" : languagePath })
             }
-
-            tabBarStackView.push(pagePath, { "objectName" : pagePath })
         }
     }
 
@@ -333,65 +358,44 @@ PageType {
             icon.source: "qrc:/images/controls/home.svg"
 
             onClicked: {
-                tabBarStackView.goToTabBarPage(PageEnum.PageHome)
-                ServersUiController.setProcessedServerId(ServersUiController.defaultServerId)
+                tabBarStackView.goToTabBarPage(PageEnum.PageManubisHome)
                 tabBar.currentIndex = 0
             }
         }
 
         TabBarButtonType {
-            id: shareTabButton
-            objectName: "shareTabButton"
-
-            Connections {
-                target: ServersModel
-
-                function onModelReset() {
-                    if (!SettingsController.isOnTv()) {
-                        var hasServerWithWriteAccess = ServersUiController.hasServerWithWriteAccess()
-                        shareTabButton.visible = hasServerWithWriteAccess
-                        shareTabButton.width = hasServerWithWriteAccess ? undefined : 0
-                    }
-                }
-            }
-
-            visible: !SettingsController.isOnTv() && ServersUiController.hasServerWithWriteAccess()
-            width: !SettingsController.isOnTv() && ServersUiController.hasServerWithWriteAccess() ? undefined : 0
-
-            text: qsTr("Share")
-            icon.source: "qrc:/images/controls/share-2.svg"
-
+            id: storeTabButton
+            objectName: "storeTabButton"
+            text: qsTr("Store")
+            icon.source: "qrc:/images/controls/plus.svg"
             onClicked: {
-                tabBarStackView.goToTabBarPage(PageEnum.PageShare)
+                tabBarStackView.goToTabBarPage(PageEnum.PageManubisStore)
                 tabBar.currentIndex = 1
             }
         }
 
         TabBarButtonType {
-            id: settingsTabButton
-            objectName: "settingsTabButton"
-
-            text: qsTr("Settings")
-            icon.source: "qrc:/images/controls/settings.svg"
-            showBadge: ServersUiController.hasServersFromGatewayApi && NewsModel.hasUnread && SettingsController.isNewsNotificationsEnabled()
-
+            id: vpnTabButton
+            objectName: "vpnTabButton"
+            text: qsTr("Usage")
+            icon.source: "qrc:/images/controls/activity.svg"
             onClicked: {
-                tabBarStackView.goToTabBarPage(PageEnum.PageSettings)
+                tabBarStackView.goToTabBarPage(PageEnum.PageManubisDashboard)
                 tabBar.currentIndex = 2
             }
         }
 
         TabBarButtonType {
-            id: plusTabButton
-            objectName: "plusTabButton"
-
-            text: qsTr("Add")
-            icon.source: "qrc:/images/controls/plus.svg"
-
+            id: accountTabButton
+            objectName: "accountTabButton"
+            text: qsTr("Account")
+            icon.source: "qrc:/images/controls/user-round.svg"
             onClicked: {
-                tabBarStackView.goToTabBarPage(PageEnum.PageSetupWizardConfigSource)
+                tabBarStackView.goToTabBarPage(PageEnum.PageManubisAccount)
                 tabBar.currentIndex = 3
             }
         }
+
+
     }
 }

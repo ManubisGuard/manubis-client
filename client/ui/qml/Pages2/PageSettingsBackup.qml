@@ -63,7 +63,7 @@ PageType {
                 Layout.bottomMargin: 16
 
                 text: qsTr("The backup will contain your passwords and private keys for all servers added " +
-                                 "to AmneziaVPN. Keep this information in a secure place.")
+                                 "to Manubis Guard. Keep this information in a secure place.")
             }
         }
     }

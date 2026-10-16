@@ -91,6 +91,15 @@ namespace PageLoader
 
         PageSettingsLanguage,
 
+        PageManubisDashboard,
+        PageManubisStore,
+        PageManubisAccount,
+        PageManubisHome,
+        PageManubisLanguage,
+        PageManubisSettings,
+        PageManubisImportSubscription,
+        PageManubisImportReview,
+
         PageUpdate,
     };
     Q_ENUM_NS(PageEnum)

@@ -31,29 +31,38 @@ TabButton {
         }
     }
 
-    contentItem: Item {
-        implicitWidth: root.icon.width
-        implicitHeight: root.icon.height
+    contentItem: Column {
+        spacing: 2
 
         IconImage {
-            anchors.centerIn: parent
-
-            width: root.icon.width
-            height: root.icon.height
-
+            anchors.horizontalCenter: parent.horizontalCenter
+            width: 20
+            height: 20
             source: root.icon.source
-            sourceSize: Qt.size(root.icon.width, root.icon.height)
+            sourceSize: Qt.size(width, height)
             color: root.icon.color
 
             DotBadgeType {
                 anchors.horizontalCenter: parent.right
                 anchors.verticalCenter: parent.top
-
                 visible: root.showBadge
                 color: AmneziaStyle.color.accentDefault
             }
         }
+
+        Text {
+            width: parent.width
+            text: root.text
+            color: root.checked ? AmneziaStyle.color.accentLight : AmneziaStyle.color.textSecondary
+            font.pixelSize: 9
+            horizontalAlignment: Text.AlignHCenter
+            elide: Text.ElideRight
+            maximumLineCount: 1
+        }
     }
+
+    implicitWidth: 64
+    implicitHeight: 44
 
     HoverHandler {
         cursorShape: Qt.PointingHandCursor

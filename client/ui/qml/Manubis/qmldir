@@ -1,0 +1,2 @@
+module Manubis
+singleton ManubisTheme 1.0 ManubisTheme.qml
