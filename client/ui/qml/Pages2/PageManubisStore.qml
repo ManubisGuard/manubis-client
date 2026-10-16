@@ -4,7 +4,6 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
 import "../Controls2"
-import "../Manubis"
 
 PageType {
     id: root
@@ -12,7 +11,8 @@ PageType {
     LayoutMirroring.enabled: LanguageUiController.currentLanguageIndex === 4
     LayoutMirroring.childrenInherit: true
 
-    readonly property string apiBaseUrl: ManubisPreferences.storeApiBaseUrl
+    // Public Store API endpoint. Admin credentials and main-panel API keys never belong in the client.
+    readonly property string apiBaseUrl: "https://all.qoqnusradio.top/store-api"
     property string statusMessage: "در حال دریافت پلن‌های فعال فروشگاه…"
     property bool loading: false
     property bool requestFailed: false

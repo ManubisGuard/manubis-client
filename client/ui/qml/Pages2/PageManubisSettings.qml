@@ -11,29 +11,6 @@ PageType {
     LayoutMirroring.enabled: LanguageUiController.currentLanguageIndex === 4
     LayoutMirroring.childrenInherit: true
 
-    function saveApiAddress() {
-        var value = apiAddress.text.trim().replace(/\/+$/, "")
-        var match = value.match(/^https:\/\/([^/?#]+)(?:\/[^?#]*)?$/i)
-        if (!match || /\s/.test(value) || match[1].indexOf("@") >= 0 || /[?#]/.test(value)) {
-            apiError.text = qsTr("Enter a valid HTTPS API base address without credentials, query parameters, or fragments.")
-            apiError.visible = true
-            return
-        }
-        var host = match[1].replace(/:\d+$/, "").toLowerCase()
-        if (host === "localhost" || host.endsWith(".localhost") || host.endsWith(".local") ||
-                host === "127.0.0.1" || host === "::1" || host === "0.0.0.0" ||
-                /^10\./.test(host) || /^192\.168\./.test(host) ||
-                /^172\.(1[6-9]|2[0-9]|3[01])\./.test(host)) {
-            apiError.text = qsTr("Local and private-network API addresses are not allowed.")
-            apiError.visible = true
-            return
-        }
-        ManubisPreferences.storeApiBaseUrl = value
-        apiAddress.text = value
-        apiError.visible = false
-        PageController.showNotificationMessage(qsTr("Store API address saved on this device."))
-    }
-
     Rectangle { anchors.fill: parent; color: ManubisTheme.background }
 
     Flickable {
@@ -92,35 +69,11 @@ PageType {
                 ColumnLayout {
                     id: apiColumn
                     anchors.fill: parent; anchors.margins: 16; spacing: 10
-                    Text { text: qsTr("Store API address"); color: ManubisTheme.textPrimary; font.pixelSize: 15; font.bold: true }
+                    Text { text: qsTr("ManubisGuard Store"); color: ManubisTheme.textPrimary; font.pixelSize: 15; font.bold: true }
                     Text {
                         Layout.fillWidth: true
-                        text: qsTr("Change the API base address used to load the store catalogue. This setting is saved on this device.")
+                        text: qsTr("The store connection is managed centrally by ManubisGuard. Store plans and public settings are loaded securely from the official service.")
                         color: ManubisTheme.textMuted; font.pixelSize: 12; wrapMode: Text.Wrap
-                    }
-                    TextField {
-                        id: apiAddress
-                        Layout.fillWidth: true
-                        text: ManubisPreferences.storeApiBaseUrl
-                        placeholderText: "https://example.com/store-api"
-                        inputMethodHints: Qt.ImhUrlCharactersOnly
-                        selectByMouse: true
-                        color: ManubisTheme.textPrimary
-                        background: Rectangle { radius: 10; color: "#091321"; border.color: ManubisTheme.border }
-                    }
-                    Text {
-                        id: apiError
-                        visible: false
-                        Layout.fillWidth: true
-                        color: "#FF9AAF"; font.pixelSize: 12; wrapMode: Text.Wrap
-                    }
-                    Button {
-                        id: saveApiButton
-                        Layout.fillWidth: true; Layout.preferredHeight: 44
-                        text: qsTr("Save API address")
-                        onClicked: root.saveApiAddress()
-                        background: Rectangle { radius: 12; color: ManubisTheme.cyan }
-                        contentItem: Text { text: saveApiButton.text; color: "#071321"; font.bold: true; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
                     }
                     Button {
                         id: openStoreButton
