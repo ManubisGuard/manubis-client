@@ -94,10 +94,7 @@ PageType {
         xhr.send()
     }
 
-    Component.onCompleted: {
-        root.loadPlans()
-        root.loadStoreSettings()
-    }
+    Component.onCompleted: root.loadPlans()
 
     function formatBytes(bytes) {
         var b = Number(bytes)
@@ -167,7 +164,7 @@ PageType {
                             id: refreshStoreButton
                             text: loading ? "…" : "تازه‌سازی"
                             enabled: !loading
-                            onClicked: { root.loadPlans(); root.loadStoreSettings() }
+                            onClicked: root.loadPlans()
                             background: Rectangle { radius: 10; color: "#183B51"; border.color: "#28647B" }
                             contentItem: Text { text: refreshStoreButton.text; color: "#42D9F5"; font.bold: true; font.pixelSize: 12; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
                         }

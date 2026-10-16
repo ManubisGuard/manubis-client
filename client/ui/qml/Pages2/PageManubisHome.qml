@@ -334,7 +334,7 @@ PageType {
                     { "label": qsTr("Usage dashboard"), "icon": "◷", "page": PageEnum.PageManubisDashboard },
                     { "label": qsTr("Store"), "icon": "◇", "page": PageEnum.PageManubisStore },
                     { "label": qsTr("My account"), "icon": "○", "page": PageEnum.PageManubisAccount },
-                    { "label": qsTr("Add subscription"), "icon": "+", "page": PageEnum.PageManubisImportSubscription },
+                    { "label": qsTr("Add connection"), "icon": "+", "page": PageEnum.PageManubisImportSubscription },
                     { "label": qsTr("VPN settings"), "icon": "⚙", "page": PageEnum.PageManubisSettings }
                 ]
                 delegate: Button {

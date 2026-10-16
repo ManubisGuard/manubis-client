@@ -12,6 +12,7 @@ PageType {
     LayoutMirroring.childrenInherit: true
     property bool showConfig: false
     property bool importing: false
+    property string errorText: ""
 
     Rectangle { anchors.fill: parent; color: ManubisTheme.background }
     ColumnLayout {
@@ -59,6 +60,13 @@ PageType {
             Layout.fillWidth: true; Layout.preferredHeight: warningText.implicitHeight + 24; radius: 14; color: "#321A2A"; border.color: "#6A3048"
             Text { id: warningText; anchors.fill: parent; anchors.margins: 12; text: ImportController.maliciousWarningText; color: "#FF9AAF"; font.pixelSize: 12; wrapMode: Text.Wrap }
         }
+        Rectangle {
+            visible: root.errorText.length > 0
+            Layout.fillWidth: true
+            Layout.preferredHeight: errorLabel.implicitHeight + 24
+            radius: 14; color: "#321A2A"; border.color: "#6A3048"
+            Text { id: errorLabel; anchors.fill: parent; anchors.margins: 12; text: root.errorText; color: "#FF9AAF"; font.pixelSize: 12; wrapMode: Text.Wrap }
+        }
         Item { Layout.fillHeight: true }
         Button {
             id: saveButton
@@ -67,12 +75,12 @@ PageType {
             enabled: !root.importing
             background: Rectangle { radius: 17; color: saveButton.enabled ? ManubisTheme.cyan : "#263751" }
             contentItem: Text { text: root.importing ? qsTr("Importing…") : qsTr("Save connection"); color: saveButton.enabled ? "#071321" : ManubisTheme.textMuted; font.pixelSize: 14; font.bold: true; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
-            onClicked: { root.importing = true; PageController.showBusyIndicator(true); ImportController.importConfig() }
+            onClicked: { root.errorText = ""; root.importing = true; PageController.showBusyIndicator(true); ImportController.importConfig() }
         }
         Connections {
             target: ImportController
             function onImportFinished() { root.importing = false; PageController.showBusyIndicator(false); PageController.goToPage(PageEnum.PageManubisHome, false) }
-            function onImportErrorOccurred(errorCode, goToPageHome) { root.importing = false; PageController.showBusyIndicator(false) }
+            function onImportErrorOccurred(errorCode, goToPageHome) { root.importing = false; PageController.showBusyIndicator(false); root.errorText = qsTr("The connection could not be saved. Check the configuration and try again.") }
         }
     }
 }

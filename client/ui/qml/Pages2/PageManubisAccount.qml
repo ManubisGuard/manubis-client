@@ -25,7 +25,7 @@ PageType {
             }
             Text {
                 Layout.leftMargin: 22; Layout.rightMargin: 22; Layout.fillWidth: true
-                text: "برای مدیریت اشتراک، خریدها و تمدیدها در یک جا وارد حساب شو. می‌تونی بدون حساب هم لینک اشتراکت رو وارد کنی."
+                text: "برای مدیریت اشتراک، خریدها و تمدیدها در یک جا وارد حساب شو. بدون حساب هم می‌تونی یک کانفیگ VPN پشتیبانی‌شده اضافه کنی."
                 color: "#91A3BC"; font.pixelSize: 13; wrapMode: Text.Wrap
             }
             Rectangle {
@@ -52,10 +52,10 @@ PageType {
                 ColumnLayout {
                     anchors.fill: parent; anchors.margins: 18; spacing: 10
                     Text { text: "ورود بدون حساب"; color: "#F4F8FF"; font.pixelSize: 16; font.bold: true }
-                    Text { text: "لینک اشتراک شخصی خودت رو وارد کن تا به کلاینت اضافه بشه."; color: "#91A3BC"; font.pixelSize: 12; wrapMode: Text.Wrap; Layout.fillWidth: true }
+                    Text { text: "یک کلید یا فایل کانفیگ VPN پشتیبانی‌شده را بدون ساخت حساب وارد کن."; color: "#91A3BC"; font.pixelSize: 12; wrapMode: Text.Wrap; Layout.fillWidth: true }
                     Button {
                         id: importSubscriptionButton
-                        Layout.fillWidth: true; Layout.preferredHeight: 42; text: "وارد کردن اشتراک"
+                        Layout.fillWidth: true; Layout.preferredHeight: 42; text: "افزودن کانفیگ"
                         onClicked: PageController.goToPage(PageEnum.PageManubisImportSubscription)
                         background: Rectangle { radius: 12; color: "#183B51"; border.color: "#28647B" }
                         contentItem: Text { text: importSubscriptionButton.text; color: "#42D9F5"; font.bold: true; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
