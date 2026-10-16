@@ -4,6 +4,13 @@
 #include <QFileInfo>
 #include <QMimeDatabase>
 #include <QUrl>
+#include <QByteArray>
+#include <QCoreApplication>
+
+#if defined(Q_OS_ANDROID)
+#include <QJniEnvironment>
+#include <QJniObject>
+#endif
 
 #include "amneziaApplication.h"
 #include "core/configurators/wireguardConfigurator.h"
@@ -167,24 +174,80 @@ QVariantMap SubscriptionUiController::readLocalFileForUpload(const QString &file
 {
     QVariantMap result;
     const QUrl url(fileUrl);
-    QString path;
-    if (url.isLocalFile()) {
-        path = url.toLocalFile();
-    } else if (url.scheme() == QStringLiteral("content")) {
-        path = url.toString();
+    QString path = url.isLocalFile() ? url.toLocalFile() : fileUrl;
+    QByteArray bytes;
+    const qsizetype maxReceiptBytes = 5 * 1024 * 1024;
+
+    if (url.scheme() == QStringLiteral("content")) {
+#if defined(Q_OS_ANDROID)
+        // Android's document picker commonly returns content:// URIs. QFile cannot
+        // open these; read through ContentResolver so SAF/cloud-provider selections work.
+        QJniObject context = QNativeInterface::QAndroidApplication::context();
+        QJniObject resolver = context.callObjectMethod(
+            "getContentResolver", "()Landroid/content/ContentResolver;");
+        QJniObject javaUri = QJniObject::callStaticObjectMethod(
+            "android/net/Uri", "parse", "(Ljava/lang/String;)Landroid/net/Uri;",
+            QJniObject::fromString(fileUrl).object<jstring>());
+        QJniObject input = resolver.callObjectMethod(
+            "openInputStream", "(Landroid/net/Uri;)Ljava/io/InputStream;",
+            javaUri.object<jobject>());
+        if (!context.isValid() || !resolver.isValid() || !javaUri.isValid() || !input.isValid()) {
+            result.insert(QStringLiteral("error"), QStringLiteral("اندروید نتوانست فایل رسید را باز کند. فایل را دوباره انتخاب کنید."));
+            return result;
+        }
+
+        QJniEnvironment env;
+        jbyteArray buffer = env->NewByteArray(8192);
+        if (!buffer) {
+            input.callMethod<void>("close", "()V");
+            result.insert(QStringLiteral("error"), QStringLiteral("خواندن فایل رسید ناموفق بود."));
+            return result;
+        }
+        while (true) {
+            const jint count = input.callMethod<jint>("read", "([B)I", buffer);
+            if (count <= 0) break;
+            if (bytes.size() + count > maxReceiptBytes) {
+                env->DeleteLocalRef(buffer);
+                input.callMethod<void>("close", "()V");
+                result.insert(QStringLiteral("error"), QStringLiteral("حجم رسید نباید بیشتر از ۵ مگابایت باشد."));
+                return result;
+            }
+            const qsizetype oldSize = bytes.size();
+            bytes.resize(oldSize + count);
+            env->GetByteArrayRegion(buffer, 0, count,
+                                    reinterpret_cast<jbyte *>(bytes.data() + oldSize));
+            if (env->ExceptionCheck()) {
+                env->ExceptionClear();
+                env->DeleteLocalRef(buffer);
+                input.callMethod<void>("close", "()V");
+                result.insert(QStringLiteral("error"), QStringLiteral("خواندن فایل رسید ناموفق بود."));
+                return result;
+            }
+        }
+        env->DeleteLocalRef(buffer);
+        input.callMethod<void>("close", "()V");
+#else
+        result.insert(QStringLiteral("error"), QStringLiteral("این نوع مسیر فایل فقط در اندروید پشتیبانی می‌شود."));
+        return result;
+#endif
     } else {
-        path = fileUrl;
+        QFile file(path);
+        if (!file.open(QIODevice::ReadOnly)) {
+            result.insert(QStringLiteral("error"), QStringLiteral("فایل انتخاب‌شده قابل‌خواندن نیست."));
+            return result;
+        }
+        if (file.size() <= 0 || file.size() > maxReceiptBytes) {
+            result.insert(QStringLiteral("error"), QStringLiteral("حجم رسید باید بیشتر از صفر و حداکثر ۵ مگابایت باشد."));
+            return result;
+        }
+        bytes = file.readAll();
     }
-    QFile file(path);
-    if (!file.open(QIODevice::ReadOnly)) {
-        result.insert(QStringLiteral("error"), QStringLiteral("فایل انتخاب‌شده قابل‌خواندن نیست."));
+
+    if (bytes.isEmpty() || bytes.size() > maxReceiptBytes) {
+        result.insert(QStringLiteral("error"), QStringLiteral("حجم رسید باید بیشتر از صفر و حداکثر ۵ مگابایت باشد."));
         return result;
     }
-    if (file.size() <= 0 || file.size() > 5 * 1024 * 1024) {
-        result.insert(QStringLiteral("error"), QStringLiteral("حجم رسید باید کمتر از ۵ مگابایت باشد."));
-        return result;
-    }
-    const QByteArray bytes = file.readAll();
+
     QMimeDatabase mimeDatabase;
     const QString mime = mimeDatabase.mimeTypeForData(bytes).name();
     if (mime != QStringLiteral("image/jpeg") && mime != QStringLiteral("image/png")
@@ -192,8 +255,14 @@ QVariantMap SubscriptionUiController::readLocalFileForUpload(const QString &file
         result.insert(QStringLiteral("error"), QStringLiteral("فرمت رسید باید JPG، PNG، WebP یا PDF باشد."));
         return result;
     }
-    QString fileName = QFileInfo(path).fileName();
-    if (fileName.isEmpty()) fileName = QStringLiteral("payment-receipt");
+
+    QString fileName = url.scheme() == QStringLiteral("content") ? QString() : QFileInfo(path).fileName();
+    if (fileName.isEmpty()) {
+        const QString extension = mime == QStringLiteral("image/jpeg") ? QStringLiteral("jpg")
+            : mime == QStringLiteral("image/png") ? QStringLiteral("png")
+            : mime == QStringLiteral("image/webp") ? QStringLiteral("webp") : QStringLiteral("pdf");
+        fileName = QStringLiteral("payment-receipt.") + extension;
+    }
     result.insert(QStringLiteral("filename"), fileName);
     result.insert(QStringLiteral("contentType"), mime);
     result.insert(QStringLiteral("contentBase64"), QString::fromLatin1(bytes.toBase64()));
