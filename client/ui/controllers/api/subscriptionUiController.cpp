@@ -1,5 +1,10 @@
 #include "subscriptionUiController.h"
 
+#include <QFile>
+#include <QFileInfo>
+#include <QMimeDatabase>
+#include <QUrl>
+
 #include "amneziaApplication.h"
 #include "core/configurators/wireguardConfigurator.h"
 #include "core/utils/serverConfigUtils.h"
@@ -156,6 +161,43 @@ void SubscriptionUiController::copyVpnKeyToClipboard()
 {
     auto clipboard = amnApp->getClipboard();
     clipboard->setText(m_vpnKey);
+}
+
+QVariantMap SubscriptionUiController::readLocalFileForUpload(const QString &fileUrl)
+{
+    QVariantMap result;
+    const QUrl url(fileUrl);
+    QString path;
+    if (url.isLocalFile()) {
+        path = url.toLocalFile();
+    } else if (url.scheme() == QStringLiteral("content")) {
+        path = url.toString();
+    } else {
+        path = fileUrl;
+    }
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly)) {
+        result.insert(QStringLiteral("error"), QStringLiteral("فایل انتخاب‌شده قابل‌خواندن نیست."));
+        return result;
+    }
+    if (file.size() <= 0 || file.size() > 5 * 1024 * 1024) {
+        result.insert(QStringLiteral("error"), QStringLiteral("حجم رسید باید کمتر از ۵ مگابایت باشد."));
+        return result;
+    }
+    const QByteArray bytes = file.readAll();
+    QMimeDatabase mimeDatabase;
+    const QString mime = mimeDatabase.mimeTypeForData(bytes).name();
+    if (mime != QStringLiteral("image/jpeg") && mime != QStringLiteral("image/png")
+        && mime != QStringLiteral("image/webp") && mime != QStringLiteral("application/pdf")) {
+        result.insert(QStringLiteral("error"), QStringLiteral("فرمت رسید باید JPG، PNG، WebP یا PDF باشد."));
+        return result;
+    }
+    QString fileName = QFileInfo(path).fileName();
+    if (fileName.isEmpty()) fileName = QStringLiteral("payment-receipt");
+    result.insert(QStringLiteral("filename"), fileName);
+    result.insert(QStringLiteral("contentType"), mime);
+    result.insert(QStringLiteral("contentBase64"), QString::fromLatin1(bytes.toBase64()));
+    return result;
 }
 
 bool SubscriptionUiController::fillAvailableServices()

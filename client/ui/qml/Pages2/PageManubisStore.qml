@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Dialogs
 import "../Controls2"
 import "../Manubis"
 
@@ -17,6 +18,16 @@ PageType {
     property bool requestFailed: false
     property bool settingsLoading: false
     property bool maintenanceMode: false
+    property bool cardTransferEnabled: false
+    property string selectedPlanId: ""
+    property var activeOrder: null
+    property string orderReceiptToken: ""
+    property string paymentCardHolder: ""
+    property string paymentCardNumber: ""
+    property string paymentBankName: ""
+    property string paymentInstructions: ""
+    property bool orderSubmitting: false
+    property string checkoutStatus: ""
     property string storeName: "ManubisGuard Store"
     property string storeDescription: ""
     property string supportUrl: ""
@@ -39,6 +50,7 @@ PageType {
                     if (typeof data.store_description === "string") root.storeDescription = data.store_description
                     if (typeof data.support_url === "string") root.supportUrl = data.support_url
                     root.maintenanceMode = data.maintenance_mode === true
+                    root.cardTransferEnabled = data.card_transfer_enabled === true
                 } catch (e) {
                     console.warn("Manubis store settings response was invalid")
                 }
@@ -99,6 +111,71 @@ PageType {
             statusMessage = "اتصال به فروشگاه برقرار نشد. آدرس و دسترسی شبکه را بررسی کن."
         }
         xhr.send()
+    }
+
+    function createOrder() {
+        var base = root.apiBaseUrl.trim().replace(/\/+$/, "")
+        var reference = customerReferenceInput.text.trim()
+        if (reference.length < 2) { checkoutStatus = "شماره تماس یا شناسه تلگرام را وارد کن."; return }
+        if (!root.selectedPlanId || root.orderSubmitting) return
+        root.orderSubmitting = true
+        checkoutStatus = "در حال ساخت سفارش…"
+        var xhr = new XMLHttpRequest()
+        xhr.open("POST", base + "/api/v1/store/orders")
+        xhr.setRequestHeader("Content-Type", "application/json")
+        xhr.timeout = 15000
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState !== XMLHttpRequest.DONE) return
+            root.orderSubmitting = false
+            if (xhr.status === 201) {
+                try {
+                    var d = JSON.parse(xhr.responseText)
+                    root.activeOrder = d
+                    root.orderReceiptToken = d.receipt_token || ""
+                    root.paymentCardHolder = d.card_holder_name || ""
+                    root.paymentCardNumber = d.card_number || ""
+                    root.paymentBankName = d.card_bank_name || ""
+                    root.paymentInstructions = d.card_transfer_instructions || ""
+                    orderReferenceDialog.close()
+                    cardTransferDialog.open()
+                    checkoutStatus = "سفارش ساخته شد. پس از واریز، رسید را بارگذاری کن."
+                } catch (e) { checkoutStatus = "پاسخ سفارش نامعتبر است." }
+            } else {
+                var detail = "ساخت سفارش ناموفق بود (HTTP " + xhr.status + ")."
+                try { var err = JSON.parse(xhr.responseText); if (err.detail) detail = err.detail } catch (e) {}
+                checkoutStatus = detail
+            }
+        }
+        xhr.ontimeout = function() { root.orderSubmitting = false; checkoutStatus = "زمان ساخت سفارش تمام شد." }
+        xhr.onerror = function() { root.orderSubmitting = false; checkoutStatus = "اتصال به فروشگاه برقرار نشد." }
+        xhr.send(JSON.stringify({plan_id: root.selectedPlanId, customer_reference: reference}))
+    }
+
+    function uploadReceipt(fileInfo) {
+        if (!root.activeOrder || !root.orderReceiptToken) { checkoutStatus = "سفارش معتبر پیدا نشد."; return }
+        if (fileInfo.error) { checkoutStatus = fileInfo.error; return }
+        if (!fileInfo.contentBase64 || !fileInfo.contentType) { checkoutStatus = "خواندن فایل رسید ناموفق بود."; return }
+        checkoutStatus = "در حال ارسال رسید به مدیریت…"
+        var xhr = new XMLHttpRequest()
+        var base = root.apiBaseUrl.trim().replace(/\/+$/, "")
+        xhr.open("POST", base + "/api/v1/store/orders/" + encodeURIComponent(root.activeOrder.order_id) + "/receipt")
+        xhr.setRequestHeader("Content-Type", "application/json")
+        xhr.setRequestHeader("X-Receipt-Token", root.orderReceiptToken)
+        xhr.timeout = 30000
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState !== XMLHttpRequest.DONE) return
+            if (xhr.status === 202) {
+                checkoutStatus = "رسید با موفقیت برای مدیر ارسال شد. پس از بررسی، وضعیت پرداخت به‌روزرسانی می‌شود."
+                root.activeOrder.status = "pending_review"
+            } else {
+                var detail = "ارسال رسید ناموفق بود (HTTP " + xhr.status + ")."
+                try { var err = JSON.parse(xhr.responseText); if (err.detail) detail = err.detail } catch (e) {}
+                checkoutStatus = detail
+            }
+        }
+        xhr.ontimeout = function() { checkoutStatus = "ارسال رسید زمان‌بر شد؛ اتصال را بررسی کن." }
+        xhr.onerror = function() { checkoutStatus = "اتصال هنگام ارسال رسید قطع شد." }
+        xhr.send(JSON.stringify({filename: fileInfo.filename, content_type: fileInfo.contentType, content_base64: fileInfo.contentBase64, transfer_reference: transferReferenceInput.text.trim() || null}))
     }
 
     Component.onCompleted: {
@@ -239,8 +316,9 @@ PageType {
                         Button {
                             id: buyPlanButton
                             Layout.fillWidth: true; Layout.preferredHeight: 44
-                            text: root.maintenanceMode ? "فروشگاه موقتاً غیرفعال است" : "خرید آنلاین هنوز فعال نشده"
-                            enabled: false
+                            text: root.maintenanceMode ? "فروشگاه موقتاً غیرفعال است" : (root.cardTransferEnabled ? "خرید با کارت‌به‌کارت" : "پرداخت هنوز تنظیم نشده")
+                            enabled: !root.maintenanceMode && root.cardTransferEnabled && !root.loading
+                            onClicked: { root.selectedPlanId = modelData.id; customerReferenceInput.text = ""; checkoutStatus = ""; orderReferenceDialog.open() }
                             background: Rectangle { radius: 12; color: buyPlanButton.enabled ? "#42D9F5" : "#263751" }
                             contentItem: Text { text: buyPlanButton.text; color: "#071321"; font.bold: true; font.pixelSize: 13; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
                         }
@@ -277,15 +355,56 @@ PageType {
     }
 
     Dialog {
-        id: checkoutNotice
+        id: orderReferenceDialog
         modal: true
-        title: "خرید آنلاین"
-        standardButtons: Dialog.Ok
+        title: "ثبت سفارش کارت‌به‌کارت"
+        standardButtons: Dialog.Cancel
         anchors.centerIn: Overlay.overlay
-        Label {
-            width: Math.min(280, root.width - 60)
-            text: "پرداخت امن و فعال‌سازی خودکار هنوز به درگاه پرداخت و سرویس تأیید تراکنش متصل نشده‌اند. هیچ خریدی انجام نشده است."
-            wrapMode: Text.Wrap
+        width: Math.min(360, root.width - 28)
+        contentItem: ColumnLayout {
+            spacing: 10
+            Label { text: "شماره تماس یا شناسه تلگرام"; wrapMode: Text.Wrap; Layout.fillWidth: true }
+            TextField { id: customerReferenceInput; placeholderText: "مثلاً @username یا 09…"; Layout.fillWidth: true; selectByMouse: true }
+            Button { text: root.orderSubmitting ? "در حال ساخت سفارش…" : "ادامه به پرداخت"; enabled: !root.orderSubmitting; Layout.fillWidth: true; onClicked: root.createOrder() }
+            Label { text: root.checkoutStatus; color: "#FFB7C4"; wrapMode: Text.Wrap; Layout.fillWidth: true; visible: root.checkoutStatus.length > 0 }
+        }
+    }
+
+    Dialog {
+        id: cardTransferDialog
+        modal: true
+        title: "پرداخت کارت‌به‌کارت"
+        standardButtons: Dialog.Close
+        anchors.centerIn: Overlay.overlay
+        width: Math.min(380, root.width - 24)
+        contentItem: Flickable {
+            implicitHeight: Math.min(paymentContent.implicitHeight + 8, root.height * 0.72)
+            contentWidth: width; contentHeight: paymentContent.implicitHeight + 16; clip: true
+            ColumnLayout {
+                id: paymentContent; width: parent.width; spacing: 9
+                Label { text: root.activeOrder ? "سفارش: " + root.activeOrder.order_id : ""; color: "#91A3BC"; wrapMode: Text.Wrap; Layout.fillWidth: true; font.pixelSize: 10 }
+                Label { text: root.activeOrder ? "مبلغ قابل پرداخت: " + root.formatPrice(root.activeOrder.amount_minor, root.activeOrder.currency) : ""; color: "#42D9F5"; font.bold: true; wrapMode: Text.Wrap; Layout.fillWidth: true }
+                Label { text: "صاحب کارت: " + root.paymentCardHolder; color: "#F4F8FF"; wrapMode: Text.Wrap; Layout.fillWidth: true }
+                Label { text: root.paymentBankName.length ? "بانک: " + root.paymentBankName : ""; color: "#91A3BC"; visible: root.paymentBankName.length > 0; Layout.fillWidth: true }
+                TextField { id: paymentCardNumberField; text: root.paymentCardNumber; readOnly: true; selectByMouse: true; Layout.fillWidth: true; font.pixelSize: 16; horizontalAlignment: TextInput.AlignHCenter }
+                Button { text: "کپی شماره کارت"; Layout.fillWidth: true; onClicked: { paymentCardNumberField.selectAll(); paymentCardNumberField.copy(); checkoutStatus = "شماره کارت کپی شد." } }
+                Label { text: root.paymentInstructions; visible: root.paymentInstructions.length > 0; color: "#C7D5E7"; wrapMode: Text.Wrap; Layout.fillWidth: true }
+                Label { text: "بعد از انتقال وجه، تصویر یا PDF رسید را انتخاب کن."; color: "#91A3BC"; wrapMode: Text.Wrap; Layout.fillWidth: true }
+                TextField { id: transferReferenceInput; placeholderText: "شماره پیگیری (اختیاری)"; Layout.fillWidth: true }
+                Button { text: "انتخاب و ارسال رسید"; Layout.fillWidth: true; enabled: Boolean(root.activeOrder) && root.orderReceiptToken.length > 0; onClicked: receiptFileDialog.open() }
+                Label { text: root.checkoutStatus; color: root.checkoutStatus.indexOf("موفقیت") >= 0 ? "#A7E8C6" : "#FFB7C4"; wrapMode: Text.Wrap; Layout.fillWidth: true; visible: root.checkoutStatus.length > 0 }
+            }
+        }
+    }
+
+    FileDialog {
+        id: receiptFileDialog
+        title: "انتخاب رسید پرداخت"
+        fileMode: FileDialog.OpenFile
+        nameFilters: ["رسید پرداخت (*.jpg *.jpeg *.png *.webp *.pdf)", "همه فایل‌ها (*)"]
+        onAccepted: {
+            var fileInfo = SubscriptionUiController.readLocalFileForUpload(selectedFile.toString())
+            root.uploadReceipt(fileInfo)
         }
     }
 }

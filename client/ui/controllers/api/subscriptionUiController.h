@@ -47,6 +47,7 @@ public slots:
     bool exportVpnKey(const QString &serverId, const QString &fileName);
     void prepareVpnKeyExport(const QString &serverId);
     void copyVpnKeyToClipboard();
+    Q_INVOKABLE QVariantMap readLocalFileForUpload(const QString &fileUrl);
 
     bool fillAvailableServices();
     QVariantMap currentActivePlanInfo();
