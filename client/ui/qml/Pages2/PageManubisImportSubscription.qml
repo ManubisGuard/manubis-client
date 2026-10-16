@@ -8,6 +8,8 @@ import PageEnum 1.0
 PageType {
     id: root
     objectName: "PageManubisImportSubscription"
+    LayoutMirroring.enabled: LanguageUiController.currentLanguageIndex === 4
+    LayoutMirroring.childrenInherit: true
     property string errorText: ""
 
     Rectangle { anchors.fill: parent; color: ManubisTheme.background }

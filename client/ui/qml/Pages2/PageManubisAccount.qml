@@ -7,6 +7,8 @@ import PageEnum 1.0
 PageType {
     id: root
     objectName: "PageManubisAccount"
+    LayoutMirroring.enabled: LanguageUiController.currentLanguageIndex === 4
+    LayoutMirroring.childrenInherit: true
     Rectangle { anchors.fill: parent; color: "#080E19" }
     Flickable {
         anchors.fill: parent

@@ -9,6 +9,8 @@ import "../Controls2"
 PageType {
     id: root
     objectName: "PageManubisSettings"
+    LayoutMirroring.enabled: LanguageUiController.currentLanguageIndex === 4
+    LayoutMirroring.childrenInherit: true
     Settings { id: prefs; category: "ManubisGuard"; property bool languageChosen: false }
 
     Rectangle { anchors.fill: parent; color: ManubisTheme.background }

@@ -9,6 +9,8 @@ import "../Controls2"
 PageType {
     id: root
     objectName: "PageManubisHome"
+    LayoutMirroring.enabled: LanguageUiController.currentLanguageIndex === 4
+    LayoutMirroring.childrenInherit: true
 
     property bool locationPickerOpen: false
     readonly property bool connected: ConnectionController.isConnected

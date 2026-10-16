@@ -8,6 +8,8 @@ import PageEnum 1.0
 PageType {
     id: root
     objectName: "PageManubisImportReview"
+    LayoutMirroring.enabled: LanguageUiController.currentLanguageIndex === 4
+    LayoutMirroring.childrenInherit: true
     property bool showConfig: false
     property bool importing: false
 

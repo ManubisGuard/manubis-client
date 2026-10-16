@@ -7,6 +7,8 @@ import "../Controls2"
 PageType {
     id: root
     objectName: "PageManubisDashboard"
+    LayoutMirroring.enabled: LanguageUiController.currentLanguageIndex === 4
+    LayoutMirroring.childrenInherit: true
 
     property color ink: "#F4F8FF"
     property color muted: "#91A3BC"

@@ -7,6 +7,8 @@ import "../Controls2"
 PageType {
     id: root
     objectName: "PageManubisStore"
+    LayoutMirroring.enabled: LanguageUiController.currentLanguageIndex === 4
+    LayoutMirroring.childrenInherit: true
 
     property string apiBaseUrl: "https://all.qoqnusradio.top/store-api"
     property string statusMessage: "برای نمایش پلن‌های ثبت‌شده، آدرس API فروشگاه را وارد کن."
