@@ -5,13 +5,13 @@ import QtQml
 QtObject {
     id: root
 
-    Settings {
-        id: persistentSettings
+    property var persistentSettings: Settings {
+        id: settingsStore
         category: "ManubisGuard"
         property bool languageChosen: false
         property string storeApiBaseUrl: "https://all.qoqnusradio.top/store-api"
     }
 
-    property alias languageChosen: persistentSettings.languageChosen
-    property alias storeApiBaseUrl: persistentSettings.storeApiBaseUrl
+    property alias languageChosen: settingsStore.languageChosen
+    property alias storeApiBaseUrl: settingsStore.storeApiBaseUrl
 }
