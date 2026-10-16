@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtCore
 
 import PageEnum 1.0
 import Style 1.0
@@ -11,6 +10,7 @@ import "../Controls2"
 import "../Controls2/TextTypes"
 import "../Config"
 import "../Components"
+import "../Manubis"
 
 PageType {
     id: root
@@ -19,13 +19,6 @@ PageType {
     property bool isTabBarDisabled: false
     property bool isTabBarShown: true
     readonly property real tabBarHeight: tabBar.visible ? tabBar.height : 0
-
-    Settings {
-        id: productPreferences
-        category: "ManubisGuard"
-        property bool languageChosen: false
-        property string languageCode: ""
-    }
 
     Keys.onPressed: function(event) {
         if (event.key === Qt.Key_Back || event.key === Qt.Key_Escape) {
@@ -125,7 +118,7 @@ PageType {
             while (tabBarStackView.depth > 1) {
                 tabBarStackView.pop()
             }
-            if (!productPreferences.languageChosen) {
+            if (!ManubisPreferences.languageChosen) {
                 root.isTabBarShown = false
                 var languagePath = PageController.getPagePath(PageEnum.PageManubisLanguage)
                 tabBarStackView.replace(languagePath, { "objectName" : languagePath }, StackView.Immediate)
@@ -319,7 +312,7 @@ PageType {
         }
 
         Component.onCompleted: {
-            if (productPreferences.languageChosen) {
+            if (ManubisPreferences.languageChosen) {
                 root.isTabBarShown = true
                 var homePath = PageController.getPagePath(PageEnum.PageManubisHome)
                 tabBarStackView.push(homePath, { "objectName" : homePath })

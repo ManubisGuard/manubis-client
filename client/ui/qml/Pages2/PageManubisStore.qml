@@ -15,7 +15,39 @@ PageType {
     property string statusMessage: "در حال دریافت پلن‌های فعال فروشگاه…"
     property bool loading: false
     property bool requestFailed: false
+    property bool settingsLoading: false
+    property bool maintenanceMode: false
+    property string storeName: "ManubisGuard Store"
+    property string storeDescription: ""
+    property string supportUrl: ""
     property var plans: []
+
+    function loadStoreSettings() {
+        var base = root.apiBaseUrl.trim().replace(/\/+$/, "")
+        if (!base.startsWith("https://")) return
+        settingsLoading = true
+        var xhr = new XMLHttpRequest()
+        xhr.open("GET", base + "/api/v1/store/settings")
+        xhr.timeout = 10000
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState !== XMLHttpRequest.DONE) return
+            settingsLoading = false
+            if (xhr.status >= 200 && xhr.status < 300) {
+                try {
+                    var data = JSON.parse(xhr.responseText)
+                    if (typeof data.store_name === "string") root.storeName = data.store_name
+                    if (typeof data.store_description === "string") root.storeDescription = data.store_description
+                    if (typeof data.support_url === "string") root.supportUrl = data.support_url
+                    root.maintenanceMode = data.maintenance_mode === true
+                } catch (e) {
+                    console.warn("Manubis store settings response was invalid")
+                }
+            }
+        }
+        xhr.ontimeout = function() { settingsLoading = false }
+        xhr.onerror = function() { settingsLoading = false }
+        xhr.send()
+    }
 
     function loadPlans() {
         var base = root.apiBaseUrl.trim().replace(/\/+$/, "")
@@ -69,7 +101,10 @@ PageType {
         xhr.send()
     }
 
-    Component.onCompleted: root.loadPlans()
+    Component.onCompleted: {
+        root.loadPlans()
+        root.loadStoreSettings()
+    }
 
     function formatBytes(bytes) {
         var b = Number(bytes)
@@ -109,7 +144,7 @@ PageType {
 
             RowLayout {
                 Layout.fillWidth: true; Layout.leftMargin: 20; Layout.rightMargin: 20; Layout.topMargin: 24
-                Text { text: "فروشگاه"; color: "#F4F8FF"; font.pixelSize: 26; font.bold: true }
+                Text { text: root.storeName; color: "#F4F8FF"; font.pixelSize: 26; font.bold: true; Layout.fillWidth: true; wrapMode: Text.Wrap }
                 Item { Layout.fillWidth: true }
                 Rectangle {
                     radius: 10; color: "#12263A"; border.color: "#244760"
@@ -119,7 +154,7 @@ PageType {
             }
             Text {
                 Layout.fillWidth: true; Layout.leftMargin: 20; Layout.rightMargin: 20
-                text: "پلن‌های فعال از API فروشگاه دریافت می‌شوند."
+                text: root.storeDescription !== "" ? root.storeDescription : "پلن‌های فعال از API فروشگاه دریافت می‌شوند."
                 color: "#91A3BC"; font.pixelSize: 13; wrapMode: Text.Wrap
             }
 
@@ -144,6 +179,19 @@ PageType {
                             contentItem: Text { text: refreshStoreButton.text; color: "#42D9F5"; font.bold: true; font.pixelSize: 12; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
                         }
                     }
+                }
+            }
+
+            Rectangle {
+                visible: root.maintenanceMode
+                Layout.fillWidth: true; Layout.leftMargin: 18; Layout.rightMargin: 18
+                Layout.preferredHeight: maintenanceText.implicitHeight + 28
+                radius: 14; color: "#30251A"; border.color: "#72522A"
+                Text {
+                    id: maintenanceText
+                    anchors.fill: parent; anchors.margins: 13
+                    text: "فروشگاه موقتاً در حالت تعمیر و نگهداری است. خرید جدید در دسترس نیست."
+                    color: "#FFD58A"; font.pixelSize: 12; wrapMode: Text.Wrap
                 }
             }
 
@@ -191,9 +239,8 @@ PageType {
                         Button {
                             id: buyPlanButton
                             Layout.fillWidth: true; Layout.preferredHeight: 44
-                            text: "مشاهده شرایط پلن"
-                            enabled: true
-                            onClicked: checkoutNotice.open()
+                            text: root.maintenanceMode ? "فروشگاه موقتاً غیرفعال است" : "خرید آنلاین هنوز فعال نشده"
+                            enabled: false
                             background: Rectangle { radius: 12; color: buyPlanButton.enabled ? "#42D9F5" : "#263751" }
                             contentItem: Text { text: buyPlanButton.text; color: "#071321"; font.bold: true; font.pixelSize: 13; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
                         }
@@ -215,10 +262,10 @@ PageType {
 
             Button {
                 id: supportButton
-                visible: false
+                visible: root.supportUrl.length > 0
                 Layout.fillWidth: true; Layout.leftMargin: 18; Layout.rightMargin: 18
                 text: "ارتباط با پشتیبانی"
-                onClicked: {}
+                onClicked: Qt.openUrlExternally(root.supportUrl)
                 background: Rectangle { radius: 12; color: "#142238"; border.color: "#263650" }
                 contentItem: Text { text: supportButton.text; color: "#42D9F5"; font.pixelSize: 12; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
             }
@@ -234,7 +281,7 @@ PageType {
         anchors.centerIn: Overlay.overlay
         Label {
             width: Math.min(280, root.width - 60)
-            text: "فهرست پلن‌ها به API متصل می‌شود، اما پرداخت و فعال‌سازی خودکار هنوز در backend تکمیل نشده‌اند. در این نسخه خرید واقعی غیرفعال است."
+            text: "پرداخت امن و فعال‌سازی خودکار هنوز به درگاه پرداخت و سرویس تأیید تراکنش متصل نشده‌اند. هیچ خریدی انجام نشده است."
             wrapMode: Text.Wrap
         }
     }

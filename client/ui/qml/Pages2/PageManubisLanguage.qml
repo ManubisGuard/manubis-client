@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtCore
 
 import PageEnum 1.0
 import "../Manubis"
@@ -11,14 +10,7 @@ PageType {
     id: root
     objectName: "PageManubisLanguage"
 
-    Settings {
-        id: languageSettings
-        category: "ManubisGuard"
-        property bool languageChosen: false
-        property string languageCode: ""
-    }
-
-    property string selectedCode: languageSettings.languageCode
+    property string selectedCode: ManubisPreferences.languageCode
     property string selectedName: ""
 
     Component.onCompleted: {
@@ -33,8 +25,8 @@ PageType {
         selectedCode = code
         selectedName = name
         LanguageUiController.changeLanguage(enumIndex)
-        languageSettings.languageCode = code
-        languageSettings.languageChosen = true
+        ManubisPreferences.languageCode = code
+        ManubisPreferences.languageChosen = true
         PageController.goToPage(PageEnum.PageManubisHome, false)
     }
 

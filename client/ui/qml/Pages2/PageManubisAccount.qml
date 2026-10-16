@@ -39,11 +39,11 @@ PageType {
                     Button {
                         id: loginButton
                         Layout.fillWidth: true; Layout.preferredHeight: 44; text: "ورود"
-                        onClicked: authNotice.open()
+                        enabled: false
                         background: Rectangle { radius: 12; color: "#42D9F5" }
                         contentItem: Text { text: loginButton.text; color: "#071321"; font.bold: true; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
                     }
-                    Text { text: "احراز هویت در نسخه بعدی فعال می‌شود."; color: "#91A3BC"; font.pixelSize: 11; Layout.alignment: Qt.AlignHCenter }
+                    Text { text: "ورود و ساخت حساب تا اتصال API احراز هویت غیرفعال است."; color: "#FFD58A"; font.pixelSize: 11; wrapMode: Text.Wrap; Layout.fillWidth: true; horizontalAlignment: Text.AlignHCenter }
                 }
             }
             Rectangle {
@@ -63,11 +63,5 @@ PageType {
                 }
             }
         }
-    }
-    Dialog {
-        id: authNotice
-        modal: true; title: "حساب کاربری"; standardButtons: Dialog.Ok
-        anchors.centerIn: Overlay.overlay
-        Label { width: Math.min(280, root.width - 60); text: "فرم ورود طراحی شده، اما API احراز هویت مشتری هنوز پیاده‌سازی نشده است."; wrapMode: Text.Wrap }
     }
 }
