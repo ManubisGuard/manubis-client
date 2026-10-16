@@ -21,6 +21,14 @@ PageType {
     property string selectedCode: languageSettings.languageCode
     property string selectedName: ""
 
+    Component.onCompleted: {
+        if (selectedCode === "") {
+            if (LanguageUiController.currentLanguageIndex === 4) selectedCode = "fa"
+            else if (LanguageUiController.currentLanguageIndex === 1) selectedCode = "ru"
+            else selectedCode = "en"
+        }
+    }
+
     function chooseLanguage(code, enumIndex, name) {
         selectedCode = code
         selectedName = name
