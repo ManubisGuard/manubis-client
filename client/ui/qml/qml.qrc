@@ -115,6 +115,7 @@
         <file>Pages2/PageManubisSettings.qml</file>
         <file>Pages2/PageManubisImportSubscription.qml</file>
         <file>Pages2/PageManubisImportReview.qml</file>
+        <file>Pages2/PageManubisOperationStatus.qml</file>
         <file>Manubis/ManubisTheme.qml</file>
         <file>Manubis/ManubisPreferences.qml</file>
         <file>Manubis/qmldir</file>

@@ -265,7 +265,10 @@ PageType {
                 visible: root.supportUrl.length > 0
                 Layout.fillWidth: true; Layout.leftMargin: 18; Layout.rightMargin: 18
                 text: "ارتباط با پشتیبانی"
-                onClicked: Qt.openUrlExternally(root.supportUrl)
+                onClicked: {
+                    if (root.supportUrl.startsWith("https://"))
+                        Qt.openUrlExternally(root.supportUrl)
+                }
                 background: Rectangle { radius: 12; color: "#142238"; border.color: "#263650" }
                 contentItem: Text { text: supportButton.text; color: "#42D9F5"; font.pixelSize: 12; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
             }

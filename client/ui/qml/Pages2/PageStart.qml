@@ -72,7 +72,9 @@ PageType {
 
         function onGoToPage(page, slide) {
             // Route legacy Amnezia entry points into the Manubis experience.
-            if (page === PageEnum.PageHome || page === PageEnum.PageSetupWizardStart) {
+            if (page === PageEnum.PageSetupWizardInstalling || page === PageEnum.PageDeinstalling) {
+                page = PageEnum.PageManubisOperationStatus
+            } else if (page === PageEnum.PageHome || page === PageEnum.PageSetupWizardStart) {
                 page = PageEnum.PageManubisHome
             } else if (page === PageEnum.PageSettings || page === PageEnum.PageSettingsServersList ||
                        (page >= PageEnum.PageSettingsServerData && page <= PageEnum.PageSettingsKillSwitchExceptions) ||
@@ -84,6 +86,7 @@ PageType {
                        page === PageEnum.PageShareConnection) {
                 page = PageEnum.PageManubisAccount
             } else if (page === PageEnum.PageAbout || page === PageEnum.PageDevMenu ||
+                       page === PageEnum.PageProtocolRaw || page === PageEnum.PageUpdate ||
                        (page >= PageEnum.PageServiceSftpSettings && page <= PageEnum.PageServiceTProxySettings)) {
                 page = PageEnum.PageManubisSettings
             } else if (page === PageEnum.PageSetupWizardViewConfig) {
@@ -111,7 +114,8 @@ PageType {
             } else {
                 tabBarStackView.replace(pagePath, { "objectName" : pagePath }, StackView.Immediate)
             }
-            root.isTabBarShown = page !== PageEnum.PageManubisLanguage
+            root.isTabBarShown = page !== PageEnum.PageManubisLanguage &&
+                                 page !== PageEnum.PageManubisOperationStatus
         }
 
         function onGoToStartPage() {
@@ -163,18 +167,13 @@ PageType {
 
         function onInstallationErrorOccurred(error) {
             PageController.showBusyIndicator(false)
-
             PageController.showErrorMessage(error)
 
-            var needCloseCurrentPage = false
             var currentPageName = tabBarStackView.currentItem.objectName
-
-            if (currentPageName === PageController.getPagePath(PageEnum.PageSetupWizardInstalling)) {
-                needCloseCurrentPage = true
-            } else if (currentPageName === PageController.getPagePath(PageEnum.PageDeinstalling)) {
-                needCloseCurrentPage = true
-            }
-            if (needCloseCurrentPage) {
+            if (currentPageName === PageController.getPagePath(PageEnum.PageManubisOperationStatus)) {
+                PageController.goToPage(PageEnum.PageManubisHome, false)
+            } else if (currentPageName === PageController.getPagePath(PageEnum.PageSetupWizardInstalling) ||
+                       currentPageName === PageController.getPagePath(PageEnum.PageDeinstalling)) {
                 PageController.closePage()
             }
         }
@@ -185,7 +184,10 @@ PageType {
 
         function onUpdateContainerFinished(message, closePage) {
             PageController.showNotificationMessage(message)
-            if (closePage) {
+            var currentPageName = tabBarStackView.currentItem.objectName
+            if (closePage && currentPageName === PageController.getPagePath(PageEnum.PageManubisOperationStatus)) {
+                PageController.goToPage(PageEnum.PageManubisHome, false)
+            } else if (closePage) {
                 PageController.closePage()
             }
         }
@@ -200,17 +202,24 @@ PageType {
         }
 
         function onRemoveAllContainersFinished(finishedMessage) {
-            if (tabBarStackView.currentItem.objectName === PageController.getPagePath(PageEnum.PageDeinstalling)) {
+            var currentPageName = tabBarStackView.currentItem.objectName
+            if (currentPageName === PageController.getPagePath(PageEnum.PageManubisOperationStatus)) {
+                PageController.goToPage(PageEnum.PageManubisHome, false)
+            } else if (currentPageName === PageController.getPagePath(PageEnum.PageDeinstalling)) {
                 PageController.closePage()
             }
             PageController.showNotificationMessage(finishedMessage)
         }
 
         function onRemoveContainerFinished(finishedMessage) {
-            if (tabBarStackView.currentItem.objectName === PageController.getPagePath(PageEnum.PageDeinstalling)) {
+            var currentPageName = tabBarStackView.currentItem.objectName
+            if (currentPageName === PageController.getPagePath(PageEnum.PageManubisOperationStatus)) {
+                PageController.goToPage(PageEnum.PageManubisHome, false)
+            } else {
+                if (currentPageName === PageController.getPagePath(PageEnum.PageDeinstalling))
+                    PageController.closePage()
                 PageController.closePage()
             }
-            PageController.closePage()
             PageController.showNotificationMessage(finishedMessage)
         }
     }

@@ -13,8 +13,18 @@ PageType {
 
     function saveApiAddress() {
         var value = apiAddress.text.trim().replace(/\/+$/, "")
-        if (!value.startsWith("https://") || /\s/.test(value)) {
-            apiError.text = qsTr("Enter a valid HTTPS API base address.")
+        var match = value.match(/^https:\/\/([^/?#]+)(?:\/[^?#]*)?$/i)
+        if (!match || /\s/.test(value) || match[1].indexOf("@") >= 0 || /[?#]/.test(value)) {
+            apiError.text = qsTr("Enter a valid HTTPS API base address without credentials, query parameters, or fragments.")
+            apiError.visible = true
+            return
+        }
+        var host = match[1].replace(/:\d+$/, "").toLowerCase()
+        if (host === "localhost" || host.endsWith(".localhost") || host.endsWith(".local") ||
+                host === "127.0.0.1" || host === "::1" || host === "0.0.0.0" ||
+                /^10\./.test(host) || /^192\.168\./.test(host) ||
+                /^172\.(1[6-9]|2[0-9]|3[01])\./.test(host)) {
+            apiError.text = qsTr("Local and private-network API addresses are not allowed.")
             apiError.visible = true
             return
         }
