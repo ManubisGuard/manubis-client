@@ -124,10 +124,9 @@ void AmneziaApplication::init()
                     [](QQuickWindow::SceneGraphError, const QString &msg) {
                         qWarning() << "Scene graph error (suppressed):" << msg;
                     });
-                // Keep graphics context alive across hide/show cycles to avoid
-                // eglSwapBuffers/makeCurrent being called on a context Android has reclaimed.
-                win->setPersistentSceneGraph(true);
-                win->setPersistentGraphics(true);
+                // Let Qt recreate scene-graph resources when Android destroys and
+                // recreates the EGL surface. Persistent graphics can retain stale
+                // resources across Activity pause/resume on some device drivers.
 #endif
 #ifdef Q_OS_IOS
                 auto pageController = m_coreController->pageController();

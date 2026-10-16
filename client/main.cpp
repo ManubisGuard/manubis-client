@@ -1,7 +1,6 @@
 #include <QDebug>
 #include <QTimer>
 #include <QQuickWindow>
-#include <QSGRendererInterface>
 #include <libssh/libssh.h>
 #include <openssl/ssl.h>
 
@@ -52,12 +51,10 @@ int main(int argc, char *argv[])
     qputenv("QT_ANDROID_DISABLE_ACCESSIBILITY", "1");
     qputenv("ANDROID_OPENSSL_SUFFIX", "_3");
 
-    // Some Android GPU/driver combinations can abort inside the Qt Android
-    // platform plugin while making the OpenGL context current during startup.
-    // Use Qt Quick's software renderer for this test build to avoid that path.
-    // This must be selected before the first QQuickWindow is created.
-    QQuickWindow::setGraphicsApi(QSGRendererInterface::Software);
-    qInfo() << "ManubisGuard: Qt Quick software renderer enabled on Android";
+    // Keep Qt Quick on its platform-default renderer. The software-renderer
+    // diagnostic build launched without painting on the target Xiaomi device;
+    // renderer selection must be validated on-device before overriding Qt's
+    // Android OpenGL/RHI choice.
 #endif
 
     AmneziaApplication app(argc, argv);
