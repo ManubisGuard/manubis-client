@@ -1,2 +1,3 @@
 module Manubis
 singleton ManubisTheme 1.0 ManubisTheme.qml
+singleton ManubisPreferences 1.0 ManubisPreferences.qml

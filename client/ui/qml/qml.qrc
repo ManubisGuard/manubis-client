@@ -116,6 +116,7 @@
         <file>Pages2/PageManubisImportSubscription.qml</file>
         <file>Pages2/PageManubisImportReview.qml</file>
         <file>Manubis/ManubisTheme.qml</file>
+        <file>Manubis/ManubisPreferences.qml</file>
         <file>Manubis/qmldir</file>
         <file>Pages2/PageProtocolAwgSettings.qml</file>
         <file>Pages2/PageProtocolOpenVpnSettings.qml</file>

@@ -2,8 +2,8 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtCore
 import "../Controls2"
+import "../Manubis"
 
 PageType {
     id: root
@@ -11,8 +11,7 @@ PageType {
     LayoutMirroring.enabled: LanguageUiController.currentLanguageIndex === 4
     LayoutMirroring.childrenInherit: true
 
-    Settings { id: storePrefs; category: "ManubisGuard"; property string storeApiBaseUrl: "https://all.qoqnusradio.top/store-api" }
-    property string apiBaseUrl: storePrefs.storeApiBaseUrl
+    readonly property string apiBaseUrl: ManubisPreferences.storeApiBaseUrl
     property string statusMessage: "در حال دریافت پلن‌های فعال فروشگاه…"
     property bool loading: false
     property bool requestFailed: false

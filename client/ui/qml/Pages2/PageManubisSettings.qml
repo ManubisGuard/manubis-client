@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtCore
 import PageEnum 1.0
 import "../Manubis"
 import "../Controls2"
@@ -12,13 +11,6 @@ PageType {
     LayoutMirroring.enabled: LanguageUiController.currentLanguageIndex === 4
     LayoutMirroring.childrenInherit: true
 
-    Settings {
-        id: prefs
-        category: "ManubisGuard"
-        property bool languageChosen: false
-        property string storeApiBaseUrl: "https://all.qoqnusradio.top/store-api"
-    }
-
     function saveApiAddress() {
         var value = apiAddress.text.trim().replace(/\/+$/, "")
         if (!value.startsWith("https://") || /\s/.test(value)) {
@@ -26,7 +18,7 @@ PageType {
             apiError.visible = true
             return
         }
-        prefs.storeApiBaseUrl = value
+        ManubisPreferences.storeApiBaseUrl = value
         apiAddress.text = value
         apiError.visible = false
         PageController.showNotificationMessage(qsTr("Store API address saved on this device."))
@@ -80,7 +72,7 @@ PageType {
                     }
                     Text { text: "›"; color: ManubisTheme.cyan; font.pixelSize: 25 }
                 }
-                MouseArea { anchors.fill: parent; onClicked: { prefs.languageChosen = false; PageController.goToPage(PageEnum.PageManubisLanguage) } }
+                MouseArea { anchors.fill: parent; onClicked: { ManubisPreferences.languageChosen = false; PageController.goToPage(PageEnum.PageManubisLanguage) } }
             }
 
             Rectangle {
@@ -99,7 +91,7 @@ PageType {
                     TextField {
                         id: apiAddress
                         Layout.fillWidth: true
-                        text: prefs.storeApiBaseUrl
+                        text: ManubisPreferences.storeApiBaseUrl
                         placeholderText: "https://example.com/store-api"
                         inputMethodHints: Qt.ImhUrlCharactersOnly
                         selectByMouse: true
