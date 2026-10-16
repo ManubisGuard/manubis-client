@@ -248,7 +248,7 @@ PageType {
                 ColumnLayout {
                     Layout.fillWidth: true
                     spacing: 3
-                    Text { text: qsTr("MONTHLY FREE DATA"); color: ManubisTheme.textMuted; font.pixelSize: 9; font.letterSpacing: 0.8 }
+                    Text { text: qsTr("DATA USAGE"); color: ManubisTheme.textMuted; font.pixelSize: 9; font.letterSpacing: 0.8 }
                     Text { text: qsTr("Usage details unavailable"); color: ManubisTheme.textSecondary; font.pixelSize: 12 }
                 }
                 Text { text: "↗"; color: ManubisTheme.textMuted; font.pixelSize: 18 }

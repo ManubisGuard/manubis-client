@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtCore
 import "../Controls2"
 
 PageType {
@@ -10,15 +11,12 @@ PageType {
     LayoutMirroring.enabled: LanguageUiController.currentLanguageIndex === 4
     LayoutMirroring.childrenInherit: true
 
-    property string apiBaseUrl: "https://all.qoqnusradio.top/store-api"
-    property string statusMessage: "برای نمایش پلن‌های ثبت‌شده، آدرس API فروشگاه را وارد کن."
+    Settings { id: storePrefs; category: "ManubisGuard"; property string storeApiBaseUrl: "https://all.qoqnusradio.top/store-api" }
+    property string apiBaseUrl: storePrefs.storeApiBaseUrl
+    property string statusMessage: "در حال دریافت پلن‌های فعال فروشگاه…"
     property bool loading: false
     property bool requestFailed: false
     property var plans: []
-    property string storeName: "Manubis Guard"
-    property string storeDescription: "پلن‌های فعال از فروشگاه دریافت می‌شوند."
-    property string supportUrl: ""
-    property bool maintenanceMode: false
 
     function loadPlans() {
         var base = root.apiBaseUrl.trim().replace(/\/+$/, "")
@@ -48,7 +46,7 @@ PageType {
                     if (!Array.isArray(data))
                         throw new Error("invalid response")
                     plans = data
-                    statusMessage = root.maintenanceMode ? "فروشگاه موقتاً در حالت تعمیر و نگهداری است." : (data.length ? data.length + " پلن فعال پیدا شد." : "هنوز پلن فعالی در فروشگاه ثبت نشده است.")
+                    statusMessage = data.length ? data.length + " پلن فعال پیدا شد." : "هنوز پلن فعالی در فروشگاه ثبت نشده است."
                     requestFailed = false
                 } catch (e) {
                     statusMessage = "پاسخ API فروشگاه قابل‌خواندن نیست."
@@ -68,28 +66,6 @@ PageType {
         xhr.onerror = function() {
             loading = false; requestFailed = true
             statusMessage = "اتصال به فروشگاه برقرار نشد. آدرس و دسترسی شبکه را بررسی کن."
-        }
-        xhr.send()
-    }
-
-    function loadStoreSettings() {
-        var base = root.apiBaseUrl.trim().replace(/\/+$/, "")
-        if (!base || !base.startsWith("https://")) return
-        var xhr = new XMLHttpRequest()
-        xhr.open("GET", base + "/api/v1/store/settings")
-        xhr.timeout = 10000
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState !== XMLHttpRequest.DONE) return
-            if (xhr.status < 200 || xhr.status >= 300) return
-            try {
-                var settings = JSON.parse(xhr.responseText)
-                if (typeof settings.store_name === "string" && settings.store_name.length) root.storeName = settings.store_name
-                if (typeof settings.store_description === "string") root.storeDescription = settings.store_description
-                if (typeof settings.support_url === "string" && settings.support_url.startsWith("https://")) root.supportUrl = settings.support_url
-                root.maintenanceMode = settings.maintenance_mode === true
-                if (root.maintenanceMode) root.statusMessage = "فروشگاه موقتاً در حالت تعمیر و نگهداری است."
-            } catch (e) {
-            }
         }
         xhr.send()
     }
@@ -139,12 +115,12 @@ PageType {
                 Rectangle {
                     radius: 10; color: "#12263A"; border.color: "#244760"
                     Layout.preferredWidth: 76; Layout.preferredHeight: 29
-                    Text { anchors.centerIn: parent; text: root.storeName.toUpperCase(); color: "#42D9F5"; font.pixelSize: 10; font.bold: true }
+                    Text { anchors.centerIn: parent; text: "MANUBIS"; color: "#42D9F5"; font.pixelSize: 10; font.bold: true }
                 }
             }
             Text {
                 Layout.fillWidth: true; Layout.leftMargin: 20; Layout.rightMargin: 20
-                text: root.storeDescription || "پلن‌های فعال از فروشگاه دریافت می‌شوند."
+                text: "پلن‌های فعال از API فروشگاه دریافت می‌شوند."
                 color: "#91A3BC"; font.pixelSize: 13; wrapMode: Text.Wrap
             }
 
@@ -155,7 +131,7 @@ PageType {
                 ColumnLayout {
                     anchors.fill: parent; anchors.margins: 16; spacing: 9
                     Text { text: "کاتالوگ فروشگاه"; color: "#F4F8FF"; font.pixelSize: 16; font.bold: true }
-                    Text { text: root.maintenanceMode ? "فروشگاه موقتاً در دسترس نیست." : "پلن‌های فعال پنل به‌صورت زنده نمایش داده می‌شن."; color: "#91A3BC"; font.pixelSize: 11 }
+                    Text { text: "پلن‌های فعال پنل به‌صورت زنده نمایش داده می‌شن."; color: "#91A3BC"; font.pixelSize: 11 }
                     RowLayout {
                         Layout.fillWidth: true; spacing: 8
                         Text { text: "کاتالوگ امن Manubis"; color: "#C7D5E7"; font.pixelSize: 12 }
@@ -190,7 +166,7 @@ PageType {
                 model: root.plans
                 delegate: Rectangle {
                     required property var modelData
-                    visible: !root.maintenanceMode
+                    visible: true
                     Layout.fillWidth: true; Layout.leftMargin: 18; Layout.rightMargin: 18
                     implicitHeight: planColumn.implicitHeight + 30
                     radius: 20; color: "#111B2D"; border.color: "#2A3D59"
@@ -216,8 +192,8 @@ PageType {
                         Button {
                             id: buyPlanButton
                             Layout.fillWidth: true; Layout.preferredHeight: 44
-                            text: root.maintenanceMode ? "فروشگاه موقتاً غیرفعال است" : "انتخاب پلن"
-                            enabled: !root.maintenanceMode
+                            text: "مشاهده شرایط پلن"
+                            enabled: true
                             onClicked: checkoutNotice.open()
                             background: Rectangle { radius: 12; color: buyPlanButton.enabled ? "#42D9F5" : "#263751" }
                             contentItem: Text { text: buyPlanButton.text; color: "#071321"; font.bold: true; font.pixelSize: 13; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
@@ -227,23 +203,23 @@ PageType {
             }
 
             Rectangle {
-                visible: root.plans.length === 0 || root.maintenanceMode
+                visible: root.plans.length === 0
                 Layout.fillWidth: true; Layout.leftMargin: 18; Layout.rightMargin: 18
                 Layout.preferredHeight: 128; radius: 18; color: "#0D1727"; border.color: "#21344D"
                 ColumnLayout {
                     anchors.centerIn: parent; spacing: 7
                     Text { text: "◇"; color: "#42D9F5"; font.pixelSize: 28; Layout.alignment: Qt.AlignHCenter }
-                    Text { text: root.maintenanceMode ? "فروشگاه موقتاً غیرفعال است" : "پلن‌ها اینجا نمایش داده می‌شن"; color: "#F4F8FF"; font.pixelSize: 14; font.bold: true; Layout.alignment: Qt.AlignHCenter }
-                    Text { text: root.maintenanceMode ? "بعداً دوباره تلاش کن." : "بعد از تنظیم API، محصولات فعال پنل ظاهر می‌شن."; color: "#91A3BC"; font.pixelSize: 11; Layout.alignment: Qt.AlignHCenter }
+                    Text { text: "پلن‌ها اینجا نمایش داده می‌شن"; color: "#F4F8FF"; font.pixelSize: 14; font.bold: true; Layout.alignment: Qt.AlignHCenter }
+                    Text { text: "بعد از ثبت پلن فعال در backend، محصولات اینجا ظاهر می‌شن."; color: "#91A3BC"; font.pixelSize: 11; Layout.alignment: Qt.AlignHCenter }
                 }
             }
 
             Button {
                 id: supportButton
-                visible: root.supportUrl.length > 0
+                visible: false
                 Layout.fillWidth: true; Layout.leftMargin: 18; Layout.rightMargin: 18
                 text: "ارتباط با پشتیبانی"
-                onClicked: Qt.openUrlExternally(root.supportUrl)
+                onClicked: {}
                 background: Rectangle { radius: 12; color: "#142238"; border.color: "#263650" }
                 contentItem: Text { text: supportButton.text; color: "#42D9F5"; font.pixelSize: 12; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
             }
