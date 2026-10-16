@@ -15,6 +15,10 @@ PageType {
     property bool loading: false
     property bool requestFailed: false
     property var plans: []
+    property string storeName: "Manubis Guard"
+    property string storeDescription: "پلن‌های فعال از فروشگاه دریافت می‌شوند."
+    property string supportUrl: ""
+    property bool maintenanceMode: false
 
     function loadPlans() {
         var base = root.apiBaseUrl.trim().replace(/\/+$/, "")
@@ -44,7 +48,7 @@ PageType {
                     if (!Array.isArray(data))
                         throw new Error("invalid response")
                     plans = data
-                    statusMessage = data.length ? data.length + " پلن فعال پیدا شد." : "هنوز پلن فعالی در فروشگاه ثبت نشده است."
+                    statusMessage = root.maintenanceMode ? "فروشگاه موقتاً در حالت تعمیر و نگهداری است." : (data.length ? data.length + " پلن فعال پیدا شد." : "هنوز پلن فعالی در فروشگاه ثبت نشده است.")
                     requestFailed = false
                 } catch (e) {
                     statusMessage = "پاسخ API فروشگاه قابل‌خواندن نیست."
@@ -68,7 +72,32 @@ PageType {
         xhr.send()
     }
 
-    Component.onCompleted: root.loadPlans()
+    function loadStoreSettings() {
+        var base = root.apiBaseUrl.trim().replace(/\/+$/, "")
+        if (!base || !base.startsWith("https://")) return
+        var xhr = new XMLHttpRequest()
+        xhr.open("GET", base + "/api/v1/store/settings")
+        xhr.timeout = 10000
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState !== XMLHttpRequest.DONE) return
+            if (xhr.status < 200 || xhr.status >= 300) return
+            try {
+                var settings = JSON.parse(xhr.responseText)
+                if (typeof settings.store_name === "string" && settings.store_name.length) root.storeName = settings.store_name
+                if (typeof settings.store_description === "string") root.storeDescription = settings.store_description
+                if (typeof settings.support_url === "string" && settings.support_url.startsWith("https://")) root.supportUrl = settings.support_url
+                root.maintenanceMode = settings.maintenance_mode === true
+                if (root.maintenanceMode) root.statusMessage = "فروشگاه موقتاً در حالت تعمیر و نگهداری است."
+            } catch (e) {
+            }
+        }
+        xhr.send()
+    }
+
+    Component.onCompleted: {
+        root.loadPlans()
+        root.loadStoreSettings()
+    }
 
     function formatBytes(bytes) {
         var b = Number(bytes)
@@ -83,6 +112,15 @@ PageType {
         if (days >= 30 && days % 30 === 0) return (days / 30) + " ماه"
         if (days > 0) return days + " روز"
         return Math.max(1, Math.floor(s / 3600)) + " ساعت"
+    }
+    function formatPrice(amountMinor, currency) {
+        var code = String(currency || "IRR").toUpperCase()
+        var zeroDecimal = ["BIF", "CLP", "DJF", "GNF", "ISK", "JPY", "KMF", "KRW", "PYG", "RWF", "UGX", "VND", "VUV", "XAF", "XOF", "XPF", "IRR"]
+        var threeDecimal = ["BHD", "IQD", "JOD", "KWD", "LYD", "OMR", "TND"]
+        var decimals = zeroDecimal.indexOf(code) >= 0 ? 0 : (threeDecimal.indexOf(code) >= 0 ? 3 : 2)
+        var value = Number(amountMinor) / Math.pow(10, decimals)
+        var locale = LanguageUiController.currentLanguageIndex === 4 ? Qt.locale("fa_IR") : Qt.locale("en_US")
+        return value.toLocaleString(locale, 'f', decimals) + " " + code
     }
 
     Rectangle { anchors.fill: parent; color: "#080E19" }
@@ -104,12 +142,12 @@ PageType {
                 Rectangle {
                     radius: 10; color: "#12263A"; border.color: "#244760"
                     Layout.preferredWidth: 76; Layout.preferredHeight: 29
-                    Text { anchors.centerIn: parent; text: "MANUBIS"; color: "#42D9F5"; font.pixelSize: 10; font.bold: true }
+                    Text { anchors.centerIn: parent; text: root.storeName.toUpperCase(); color: "#42D9F5"; font.pixelSize: 10; font.bold: true }
                 }
             }
             Text {
                 Layout.fillWidth: true; Layout.leftMargin: 20; Layout.rightMargin: 20
-                text: "پلن مناسب خودت رو انتخاب کن. پلن‌های فعال از پنل فروشگاه دریافت می‌شن."
+                text: root.storeDescription || "پلن‌های فعال از فروشگاه دریافت می‌شوند."
                 color: "#91A3BC"; font.pixelSize: 13; wrapMode: Text.Wrap
             }
 
@@ -120,7 +158,7 @@ PageType {
                 ColumnLayout {
                     anchors.fill: parent; anchors.margins: 16; spacing: 9
                     Text { text: "کاتالوگ فروشگاه"; color: "#F4F8FF"; font.pixelSize: 16; font.bold: true }
-                    Text { text: "پلن‌های فعال پنل به‌صورت زنده نمایش داده می‌شن."; color: "#91A3BC"; font.pixelSize: 11 }
+                    Text { text: root.maintenanceMode ? "فروشگاه موقتاً در دسترس نیست." : "پلن‌های فعال پنل به‌صورت زنده نمایش داده می‌شن."; color: "#91A3BC"; font.pixelSize: 11 }
                     RowLayout {
                         Layout.fillWidth: true; spacing: 8
                         Text { text: "کاتالوگ امن Manubis"; color: "#C7D5E7"; font.pixelSize: 12 }
@@ -129,7 +167,7 @@ PageType {
                             id: refreshStoreButton
                             text: loading ? "…" : "تازه‌سازی"
                             enabled: !loading
-                            onClicked: root.loadPlans()
+                            onClicked: { root.loadPlans(); root.loadStoreSettings() }
                             background: Rectangle { radius: 10; color: "#183B51"; border.color: "#28647B" }
                             contentItem: Text { text: refreshStoreButton.text; color: "#42D9F5"; font.bold: true; font.pixelSize: 12; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
                         }
@@ -155,6 +193,7 @@ PageType {
                 model: root.plans
                 delegate: Rectangle {
                     required property var modelData
+                    visible: !root.maintenanceMode
                     Layout.fillWidth: true; Layout.leftMargin: 18; Layout.rightMargin: 18
                     implicitHeight: planColumn.implicitHeight + 30
                     radius: 20; color: "#111B2D"; border.color: "#2A3D59"
@@ -167,7 +206,7 @@ PageType {
                             Rectangle {
                                 radius: 9; color: "#153448"; border.color: "#245A70"
                                 Layout.preferredWidth: priceLabel.implicitWidth + 18; Layout.preferredHeight: 30
-                                Text { id: priceLabel; anchors.centerIn: parent; text: Number(modelData.price_minor).toLocaleString(Qt.locale("fa_IR")) + " " + (modelData.currency || ""); color: "#42D9F5"; font.pixelSize: 12; font.bold: true }
+                                Text { id: priceLabel; anchors.centerIn: parent; text: root.formatPrice(modelData.price_minor, modelData.currency); color: "#42D9F5"; font.pixelSize: 12; font.bold: true }
                             }
                         }
                         Text { text: modelData.description || "سرویس اختصاصی Manubis Guard"; color: "#A7B7CC"; font.pixelSize: 12; wrapMode: Text.Wrap; Layout.fillWidth: true }
@@ -180,9 +219,10 @@ PageType {
                         Button {
                             id: buyPlanButton
                             Layout.fillWidth: true; Layout.preferredHeight: 44
-                            text: "انتخاب پلن"
+                            text: root.maintenanceMode ? "فروشگاه موقتاً غیرفعال است" : "انتخاب پلن"
+                            enabled: !root.maintenanceMode
                             onClicked: checkoutNotice.open()
-                            background: Rectangle { radius: 12; color: "#42D9F5" }
+                            background: Rectangle { radius: 12; color: buyPlanButton.enabled ? "#42D9F5" : "#263751" }
                             contentItem: Text { text: buyPlanButton.text; color: "#071321"; font.bold: true; font.pixelSize: 13; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
                         }
                     }
@@ -190,17 +230,26 @@ PageType {
             }
 
             Rectangle {
-                visible: root.plans.length === 0
+                visible: root.plans.length === 0 || root.maintenanceMode
                 Layout.fillWidth: true; Layout.leftMargin: 18; Layout.rightMargin: 18
                 Layout.preferredHeight: 128; radius: 18; color: "#0D1727"; border.color: "#21344D"
                 ColumnLayout {
                     anchors.centerIn: parent; spacing: 7
                     Text { text: "◇"; color: "#42D9F5"; font.pixelSize: 28; Layout.alignment: Qt.AlignHCenter }
-                    Text { text: "پلن‌ها اینجا نمایش داده می‌شن"; color: "#F4F8FF"; font.pixelSize: 14; font.bold: true; Layout.alignment: Qt.AlignHCenter }
-                    Text { text: "بعد از تنظیم API، محصولات فعال پنل ظاهر می‌شن."; color: "#91A3BC"; font.pixelSize: 11; Layout.alignment: Qt.AlignHCenter }
+                    Text { text: root.maintenanceMode ? "فروشگاه موقتاً غیرفعال است" : "پلن‌ها اینجا نمایش داده می‌شن"; color: "#F4F8FF"; font.pixelSize: 14; font.bold: true; Layout.alignment: Qt.AlignHCenter }
+                    Text { text: root.maintenanceMode ? "بعداً دوباره تلاش کن." : "بعد از تنظیم API، محصولات فعال پنل ظاهر می‌شن."; color: "#91A3BC"; font.pixelSize: 11; Layout.alignment: Qt.AlignHCenter }
                 }
             }
 
+            Button {
+                id: supportButton
+                visible: root.supportUrl.length > 0
+                Layout.fillWidth: true; Layout.leftMargin: 18; Layout.rightMargin: 18
+                text: "ارتباط با پشتیبانی"
+                onClicked: Qt.openUrlExternally(root.supportUrl)
+                background: Rectangle { radius: 12; color: "#142238"; border.color: "#263650" }
+                contentItem: Text { text: supportButton.text; color: "#42D9F5"; font.pixelSize: 12; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
+            }
             Item { Layout.preferredHeight: 12 }
         }
     }
