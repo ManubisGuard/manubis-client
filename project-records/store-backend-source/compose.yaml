@@ -1,0 +1,65 @@
+name: manubisguard-store-test
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: manubis_store
+      POSTGRES_USER: store_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - store_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U store_user -d manubis_store"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks:
+      - store_internal
+    security_opt:
+      - no-new-privileges:true
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    init: true
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      STORE_HOST: 0.0.0.0
+      STORE_PORT: 8091
+      DATABASE_URL: postgresql+asyncpg://store_user:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/manubis_store
+      PANEL_BASE_URL: ${PANEL_BASE_URL:-https://vip.qoqnusradio.top}
+      PANEL_API_KEY: ${PANEL_API_KEY:-}
+      PANEL_SETTINGS_ENCRYPTION_KEY: ${PANEL_SETTINGS_ENCRYPTION_KEY:-}
+      ADMIN_API_TOKEN: ${ADMIN_API_TOKEN:?Set ADMIN_API_TOKEN in .env}
+      PANEL_TIMEOUT_SECONDS: ${PANEL_TIMEOUT_SECONDS:-8}
+    ports:
+      - "${STORE_PUBLISH_HOST:-127.0.0.1}:${STORE_PUBLISH_PORT:-8091}:8091"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8091/health/live', timeout=2).read()"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,noexec,nosuid
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - store_internal
+
+networks:
+  store_internal:
+    driver: bridge
+
+volumes:
+  store_db_data:
