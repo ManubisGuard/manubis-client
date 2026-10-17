@@ -357,7 +357,7 @@ PageType {
             Button {
                 Layout.fillWidth: true; Layout.preferredHeight: 48
                 background: Rectangle { radius: 14; color: "#101C2D" }
-                contentItem: Text { text: qsTr("Language / Язык / زبان"); color: ManubisTheme.textSecondary; font.pixelSize: 12; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
+                contentItem: Text { text: (LanguageUiController.currentLanguageIndex === 4 ? "زبان برنامه" : "Language"); color: ManubisTheme.textSecondary; font.pixelSize: 12; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
                 onClicked: root.openMainPage(PageEnum.PageManubisLanguage)
             }
         }

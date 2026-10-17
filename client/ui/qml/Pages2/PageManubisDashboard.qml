@@ -11,6 +11,8 @@ PageType {
     LayoutMirroring.enabled: LanguageUiController.currentLanguageIndex === 4
     LayoutMirroring.childrenInherit: true
 
+    function uiText(fa, en) { return LanguageUiController.currentLanguageIndex === 4 ? fa : en }
+
     property color ink: "#F4F8FF"
     property color muted: "#91A3BC"
     property color panel: "#111B2D"
@@ -74,7 +76,7 @@ PageType {
                     Row {
                         anchors.centerIn: parent; spacing: 6
                         Rectangle { width: 6; height: 6; radius: 3; color: ConnectionController.isConnected ? "#42D99A" : "#F6B95B"; anchors.verticalCenter: parent.verticalCenter }
-                        Text { text: ConnectionController.isConnected ? "متصل" : "قطع"; color: ConnectionController.isConnected ? "#8EE9BD" : "#FFD58A"; font.pixelSize: 11 }
+                        Text { text: ConnectionController.isConnected ? root.uiText("متصل", "Connected") : root.uiText("قطع", "Disconnected"); color: ConnectionController.isConnected ? "#8EE9BD" : "#FFD58A"; font.pixelSize: 11 }
                     }
                 }
             }
@@ -84,9 +86,9 @@ PageType {
                 Layout.leftMargin: 22
                 Layout.rightMargin: 22
                 spacing: 5
-                Text { text: "سلام، خوش اومدی"; color: ink; font.pixelSize: 25; font.bold: true }
+                Text { text: root.uiText("سلام، خوش اومدی", "Hello, welcome back"); color: ink; font.pixelSize: 25; font.bold: true }
                 Text {
-                    text: "اتصال امن خودت رو از یک جا مدیریت کن."
+                    text: root.uiText("اتصال امن خودت رو از یک جا مدیریت کن.", "Manage your secure connection in one place.")
                     color: muted; font.pixelSize: 13
                     wrapMode: Text.Wrap
                     Layout.fillWidth: true
@@ -122,20 +124,20 @@ PageType {
                         spacing: 7
                         Rectangle { Layout.preferredWidth: 8; Layout.preferredHeight: 8; radius: 4; color: ConnectionController.isConnected ? "#42D99A" : "#F6B95B" }
                         Text {
-                            text: ConnectionController.isConnected ? "اتصال برقرار است" : ConnectionController.isConnectionInProgress ? ConnectionController.connectionStateText : "آماده اتصال"
+                            text: ConnectionController.isConnected ? root.uiText("اتصال برقرار است", "Connection active") : ConnectionController.isConnectionInProgress ? ConnectionController.connectionStateText : root.uiText("آماده اتصال", "Ready to connect")
                             color: ConnectionController.isConnected ? "#8EE9BD" : "#FFD58A"
                             font.pixelSize: 12; font.bold: true
                         }
                     }
                     Text {
-                        text: ConnectionController.isConnected ? "اتصال شما فعاله" : ConnectionController.isConnectionInProgress ? ConnectionController.connectionStateText : "اینترنتت رو امن‌تر کن"
+                        text: ConnectionController.isConnected ? root.uiText("اتصال شما فعاله", "Your connection is active") : ConnectionController.isConnectionInProgress ? ConnectionController.connectionStateText : root.uiText("اینترنتت رو امن‌تر کن", "Make your connection more secure")
                         color: ink; font.pixelSize: 23; font.bold: true
                         Layout.fillWidth: true
                     }
                     Text {
                         text: ConnectionController.isConnected
-                              ? "وضعیت اتصال را از بخش VPN مدیریت کن."
-                              : "به سرویس خودت وصل شو یا یک اشتراک وارد کن."
+                              ? root.uiText("وضعیت اتصال را از بخش VPN مدیریت کن.", "Manage your connection from the VPN screen.")
+                              : root.uiText("به سرویس خودت وصل شو یا یک اشتراک وارد کن.", "Connect to your service or import a subscription.")
                         color: "#AFC0D5"; font.pixelSize: 12
                         wrapMode: Text.Wrap
                         Layout.fillWidth: true
@@ -145,7 +147,7 @@ PageType {
                         id: connectDashboardButton
                         Layout.fillWidth: true
                         Layout.preferredHeight: 48
-                        text: ConnectionController.isConnected ? "مدیریت اتصال" : "اتصال / افزودن اشتراک"
+                        text: ConnectionController.isConnected ? root.uiText("مدیریت اتصال", "Manage connection") : root.uiText("اتصال / افزودن اشتراک", "Connect / Add subscription")
                         onClicked: root.openVpn()
                         background: Rectangle {
                             radius: 14
@@ -175,8 +177,8 @@ PageType {
                     ColumnLayout {
                         anchors.fill: parent; anchors.margins: 14; spacing: 8
                         Text { text: "◈"; color: cyan; font.pixelSize: 21 }
-                        Text { text: "اشتراک من"; color: ink; font.pixelSize: 13; font.bold: true }
-                        Text { text: ManubisPreferences.isAuthenticated ? "حساب متصل: @" + ManubisPreferences.accountUsername : "برای دیدن سفارش‌ها وارد حساب شو"; color: muted; font.pixelSize: 10; wrapMode: Text.Wrap; Layout.fillWidth: true }
+                        Text { text: root.uiText("اشتراک من", "My subscription"); color: ink; font.pixelSize: 13; font.bold: true }
+                        Text { text: ManubisPreferences.isAuthenticated ? root.uiText("حساب متصل: @", "Signed-in account: @") + ManubisPreferences.accountUsername : root.uiText("برای دیدن سفارش‌ها وارد حساب شو", "Sign in to view your orders"); color: muted; font.pixelSize: 10; wrapMode: Text.Wrap; Layout.fillWidth: true }
                     }
                     MouseArea { anchors.fill: parent; onClicked: PageController.goToPage(PageEnum.PageManubisAccount) }
                 }
@@ -186,8 +188,8 @@ PageType {
                     ColumnLayout {
                         anchors.fill: parent; anchors.margins: 14; spacing: 8
                         Text { text: "✦"; color: "#9D9BFF"; font.pixelSize: 21 }
-                        Text { text: "فروشگاه"; color: ink; font.pixelSize: 13; font.bold: true }
-                        Text { text: "پلن‌ها و تمدید"; color: muted; font.pixelSize: 10 }
+                        Text { text: root.uiText("فروشگاه", "Store"); color: ink; font.pixelSize: 13; font.bold: true }
+                        Text { text: root.uiText("پلن‌ها و تمدید", "Plans and renewals"); color: muted; font.pixelSize: 10 }
                     }
                     MouseArea {
                         anchors.fill: parent
@@ -210,13 +212,13 @@ PageType {
                     }
                     ColumnLayout {
                         spacing: 3
-                        Text { text: "تمدید یا خرید سرویس"; color: ink; font.pixelSize: 13; font.bold: true }
-                        Text { text: "پلن مناسب خودت رو پیدا کن"; color: muted; font.pixelSize: 11 }
+                        Text { text: root.uiText("تمدید یا خرید سرویس", "Renew or buy a plan"); color: ink; font.pixelSize: 13; font.bold: true }
+                        Text { text: root.uiText("پلن مناسب خودت رو پیدا کن", "Find a plan that works for you"); color: muted; font.pixelSize: 11 }
                     }
                     Item { Layout.fillWidth: true }
                     Button {
                         id: storeDashboardButton
-                        text: "مشاهده"
+                        text: root.uiText("مشاهده", "View")
                         onClicked: PageController.goToPage(PageEnum.PageManubisStore)
                         background: Rectangle { radius: 10; color: "#183B51"; border.color: "#28647B" }
                         contentItem: Text { text: storeDashboardButton.text; color: cyan; font.pixelSize: 12; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }

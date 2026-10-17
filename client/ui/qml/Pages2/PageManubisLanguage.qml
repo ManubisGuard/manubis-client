@@ -10,6 +10,8 @@ PageType {
     id: root
     objectName: "PageManubisLanguage"
 
+    function uiText(fa, en) { return LanguageUiController.currentLanguageIndex === 4 ? fa : en }
+
     property string selectedCode: ManubisPreferences.languageCode
     property string selectedName: ""
 
@@ -96,7 +98,7 @@ PageType {
         Text {
             Layout.fillWidth: true
             Layout.topMargin: 5
-            text: qsTr("Выберите язык  ·  زبان برنامه را انتخاب کنید")
+            text: root.uiText("زبان مورد استفاده در همه بخش‌های برنامه را انتخاب کن", "Select the language used throughout the app")
             color: ManubisTheme.textMuted
             font.pixelSize: 12
             horizontalAlignment: Text.AlignHCenter
