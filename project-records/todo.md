@@ -1067,7 +1067,7 @@
 - To protect against the planned server wipe, the project brief, full progress log, documentation, design/tool assets, and source-only Store backend snapshot are preserved in the Android repository under `project-records/`.
 - The Store backend snapshot was exported from tracked Git objects only; runtime `.env`, databases, live secrets, signing keys, APK/build caches, and live server data are excluded. The backend's two-commit Git history is preserved as `project-records/backups/store-backend-history.bundle`; `git bundle verify` confirmed the bundle is complete.
 - The separate backend repository does not have its own GitHub remote/repository configured. Its source and history bundle are being committed into the Android repository so the backend can be recovered after the server wipe.
-- Validation still required: inspect staged file list for secrets, commit these records, push the report commit, and verify the remote branch SHA and report/source paths on GitHub.
+- Completed: staged-file secret guard passed; project records were committed and pushed; remote branch SHA and report/backend source paths were read back from GitHub.
 - Important: this is a source/report backup, not a database backup or server image. It does not preserve live customer data, Docker volumes, runtime environment secrets, TLS private keys, or Android signing-key passwords. Those must be separately backed up securely if needed before wiping the server.
 
 ## 2026-10-17 — GitHub backup verification completed
@@ -1075,4 +1075,4 @@
 - Secret-file guard on the staged archive passed: no runtime `.env`, keystore, JKS, PEM, P12, SSH private-key files were included; pattern scan found no private-key block, GitHub token, AWS access key, or long bearer-token literal. `git diff --cached --check` passed before the archive commit.
 - Project preservation commit `3188a2b2` was pushed successfully. Local HEAD and GitHub branch `feature/manubis-ui-rebuild` matched at `3188a2b2810fce5917537156025a409bc3270426`; the Android worktree was clean after the push.
 - GitHub read-back verified `project-records/todo.md` (blob `7b662925ea1acb8de4abf114c7ceb9e99c2880c4`), backend auth source `project-records/store-backend-source/app/routes/auth.py` (blob `0d1b88c02d1fce852bf4ddab55a62870cf0abe03`), and the backend Git history bundle are available on the remote branch.
-- A final report update is being synchronized now so the repository records the completed verification, not merely the planned verification.
+- Final report correction was pushed in commit `63374b03`. Local HEAD and GitHub branch `feature/manubis-ui-rebuild` both matched at `63374b0395bb375c46c033fb5fdd59bf6a312183` after that push.
